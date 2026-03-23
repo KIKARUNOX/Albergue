@@ -3,8 +3,8 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
-  authDomain: "TU_PROJECT.firebaseapp.com",
+  apiKey: "AIzaSyB9hw6QlYegSaWWw0rtUKV1SLr0A7nV_ps",
+  authDomain: "codigo316-837bd.firebaseapp.com",
   projectId: "codigo316-837bd",
 };
 
