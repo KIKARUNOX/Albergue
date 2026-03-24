@@ -18,13 +18,21 @@ interface Persona {
 export default function SearchBar() {
   const [query, setQuery] = useState("");
   const [personas, setPersonas] = useState<Persona[]>([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
-      const snapshot = await getDocs(collection(db, "personas"));
-      setPersonas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Persona)));
+      try {
+        setError("");
+        const snapshot = await getDocs(collection(db, "personas"));
+        setPersonas(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Persona)));
+      } catch (err) {
+        console.error("Error al buscar personas:", err);
+        setError("No tienes permisos para consultar personas.");
+        setPersonas([]);
+      }
     };
-    fetchData();
+    void fetchData();
   }, []);
 
   const filtered = personas.filter(p => {
@@ -35,6 +43,7 @@ export default function SearchBar() {
   return (
     <div>
       <input placeholder="Buscar..." onChange={(e) => setQuery(e.target.value)} />
+      {error && <p>{error}</p>}
       <ul>
         {filtered.map(p => (
           <li key={p.id}>

@@ -14,6 +14,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const firestoreDatabaseId = import.meta.env.VITE_FIRESTORE_DATABASE_ID as string | undefined;
 
 try {
   if (typeof window !== "undefined") {
@@ -27,5 +28,5 @@ try {
   }
 }
 
-export const db = getFirestore(app);
+export const db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
 export const auth = getAuth(app);

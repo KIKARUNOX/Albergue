@@ -13,31 +13,54 @@ interface Persona {
 
 export default function Leaderboard() {
   const [personas, setPersonas] = useState<Persona[]>([]);
+  const [error, setError] = useState("");
 
   const cargar = async () => {
-    const snapshot = await getDocs(collection(db, "personas"));
-    const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Persona));
-    data.sort((a, b) => (b.puntos ?? 0) - (a.puntos ?? 0));
-    setPersonas(data);
+    try {
+      setError("");
+      const snapshot = await getDocs(collection(db, "personas"));
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Persona));
+      data.sort((a, b) => (b.puntos ?? 0) - (a.puntos ?? 0));
+      setPersonas(data);
+    } catch (err) {
+      console.error("Error al cargar leaderboard:", err);
+      setError("No tienes permisos para leer personas.");
+      setPersonas([]);
+    }
   };
 
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    void cargar();
+  }, []);
 
   const sumar = async (id: string, puntosActuales: number = 0) => {
-    const ref = doc(db, "personas", id);
-    await updateDoc(ref, { puntos: puntosActuales + 1 });
-    cargar();
+    try {
+      setError("");
+      const ref = doc(db, "personas", id);
+      await updateDoc(ref, { puntos: puntosActuales + 1 });
+      await cargar();
+    } catch (err) {
+      console.error("Error al sumar puntos:", err);
+      setError("No tienes permisos para actualizar puntos.");
+    }
   };
 
   const restar = async (id: string, puntosActuales: number = 0) => {
-    const ref = doc(db, "personas", id);
-    await updateDoc(ref, { puntos: Math.max(0, puntosActuales - 1) });
-    cargar();
+    try {
+      setError("");
+      const ref = doc(db, "personas", id);
+      await updateDoc(ref, { puntos: Math.max(0, puntosActuales - 1) });
+      await cargar();
+    } catch (err) {
+      console.error("Error al restar puntos:", err);
+      setError("No tienes permisos para actualizar puntos.");
+    }
   };
 
   return (
     <div>
       <h2>Leaderboard</h2>
+      {error && <p>{error}</p>}
       <ul>
         {personas.length === 0 ? (
           <li>No hay personas registradas</li>
