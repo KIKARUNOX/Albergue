@@ -6,12 +6,22 @@ import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import ImportarJovenes from "./components/ImportarJovenes";
+import PersonasPage from "./components/PersonasPage";
 import './App.css'
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { signOut } from "firebase/auth";
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+  };
 
   useEffect(() => {
     onAuthStateChanged(auth, (u) => {
@@ -24,13 +34,33 @@ function App() {
     return <div>Cargando...</div>;
   }
 
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
   return (
-    <Routes>
-      <Route path="/" element={user ? <Dashboard /> : <Login />} />
-      <Route path="/signup" element={user ? <Navigate to="/" replace /> : <Signup />} />
-      <Route path="/import" element={user ? <ImportarJovenes /> : <Navigate to="/" replace />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <div>
+      <nav style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
+        <Link to="/">Dashboard</Link>
+        <Link to="/personas">Personas</Link>
+        <Link to="/import">Importar</Link>
+        <button onClick={() => void handleLogout()}>Cerrar sesion</button>
+      </nav>
+
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/personas" element={<PersonasPage />} />
+        <Route path="/import" element={<ImportarJovenes />} />
+        <Route path="/signup" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </div>
   );
 }
 

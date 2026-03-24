@@ -10,7 +10,36 @@ interface Persona {
   [key: string]: unknown;
 }
 
-export default function CalendarView() {
+type CalendarViewProps = {
+  onlyCurrentMonth?: boolean;
+};
+
+const getMonthFromDateString = (value?: string) => {
+  if (!value) return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const ymdMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (ymdMatch) {
+    return Number(ymdMatch[2]);
+  }
+
+  const slashParts = trimmed.split("/");
+  if (slashParts.length === 3) {
+    const month = Number(slashParts[0]);
+    if (month >= 1 && month <= 12) return month;
+  }
+
+  const date = new Date(trimmed);
+  if (!Number.isNaN(date.getTime())) {
+    return date.getMonth() + 1;
+  }
+
+  return null;
+};
+
+export default function CalendarView({ onlyCurrentMonth = false }: CalendarViewProps) {
   const [cumples, setCumples] = useState<Persona[]>([]);
   const [error, setError] = useState("");
 
@@ -20,7 +49,15 @@ export default function CalendarView() {
         setError("");
         const snapshot = await getDocs(collection(db, "personas"));
         const data = snapshot.docs.map(doc => doc.data() as Persona);
-        setCumples(data.filter(p => p.fechaNacimiento));
+        const withBirthday = data.filter((p) => p.fechaNacimiento);
+
+        if (!onlyCurrentMonth) {
+          setCumples(withBirthday);
+          return;
+        }
+
+        const currentMonth = new Date().getMonth() + 1;
+        setCumples(withBirthday.filter((p) => getMonthFromDateString(p.fechaNacimiento) === currentMonth));
       } catch (err) {
         console.error("Error al cargar cumpleanos:", err);
         setError("No tienes permisos para ver cumpleanos.");
@@ -28,11 +65,11 @@ export default function CalendarView() {
       }
     };
     void fetchData();
-  }, []);
+  }, [onlyCurrentMonth]);
 
   return (
     <div>
-      <h2>Cumpleaños</h2>
+      <h2>{onlyCurrentMonth ? "Cumpleanos del mes" : "Cumpleaños"}</h2>
       {error && <p>{error}</p>}
       <ul>
         {cumples.length === 0 ? (

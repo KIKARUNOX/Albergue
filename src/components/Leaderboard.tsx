@@ -11,7 +11,12 @@ interface Persona {
   [key: string]: unknown;
 }
 
-export default function Leaderboard() {
+type LeaderboardProps = {
+  limit?: number;
+  showControls?: boolean;
+};
+
+export default function Leaderboard({ limit, showControls = true }: LeaderboardProps) {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [error, setError] = useState("");
 
@@ -59,17 +64,17 @@ export default function Leaderboard() {
 
   return (
     <div>
-      <h2>Leaderboard</h2>
+      <h2>{limit ? `Top ${limit} personas` : "Leaderboard"}</h2>
       {error && <p>{error}</p>}
       <ul>
-        {personas.length === 0 ? (
+        {(limit ? personas.slice(0, limit) : personas).length === 0 ? (
           <li>No hay personas registradas</li>
         ) : (
-          personas.map(p => (
+          (limit ? personas.slice(0, limit) : personas).map(p => (
             <li key={p.id}>
               {p.nombre} {p.apellido1} {p.apellido2} - {p.puntos ?? 0} puntos
-              <button onClick={() => sumar(p.id, p.puntos ?? 0)}>+</button>
-              <button onClick={() => restar(p.id, p.puntos ?? 0)}>-</button>
+              {showControls ? <button onClick={() => sumar(p.id, p.puntos ?? 0)}>+</button> : null}
+              {showControls ? <button onClick={() => restar(p.id, p.puntos ?? 0)}>-</button> : null}
             </li>
           ))
         )}
