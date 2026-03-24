@@ -2,6 +2,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import CalendarView from "./CalendarView";
 import Leaderboard from "./Leaderboard";
+import RegistrarPersona from "./RegistrarPersona";
 import SearchBar from "./SearchBar";
 
 export default function Dashboard() {
@@ -17,6 +18,7 @@ export default function Dashboard() {
     <div>
       <h1>Dashboard</h1>
       <button onClick={handleLogout}>Cerrar Sesión</button>
+      <RegistrarPersona />
       <SearchBar />
       <CalendarView />
       <Leaderboard />
