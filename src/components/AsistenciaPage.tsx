@@ -48,6 +48,19 @@ export default function AsistenciaPage() {
   const [descripcionReto, setDescripcionReto] = useState("");
   const [personasCompletaron, setPersonasCompletaron] = useState<string[]>([]);
 
+  const nombreCompleto = (p?: Persona) =>
+    `${p?.nombre ?? ""} ${p?.apellido1 ?? ""} ${p?.apellido2 ?? ""}`.trim();
+
+  const ordenarPersonas = (lista: Persona[]) =>
+    [...lista].sort((a, b) => nombreCompleto(a).localeCompare(nombreCompleto(b), "es", { sensitivity: "base" }));
+
+  const ordenarIdsPorNombre = (ids: string[]) =>
+    [...ids].sort((a, b) => {
+      const pa = personas.find((p) => p.id === a);
+      const pb = personas.find((p) => p.id === b);
+      return nombreCompleto(pa).localeCompare(nombreCompleto(pb), "es", { sensitivity: "base" });
+    });
+
   // Cargar asistencias
   const cargarAsistencias = async () => {
     try {
@@ -78,8 +91,7 @@ export default function AsistenciaPage() {
     try {
       const snapshot = await getDocs(collection(db, "personas"));
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Persona));
-      data.sort((a, b) => `${a.nombre} ${a.apellido1}`.localeCompare(`${b.nombre} ${b.apellido1}`));
-      setPersonas(data);
+      setPersonas(ordenarPersonas(data));
     } catch (err) {
       console.error("Error al cargar personas:", err);
       setMensaje("Error al cargar personas");
@@ -310,7 +322,7 @@ export default function AsistenciaPage() {
                       <strong>✓ Personas asistentes:</strong> {a.personas.length}
                     </p>
                     <ul style={{ fontSize: 14, margin: "4px 0" }}>
-                      {a.personas.map((pid) => {
+                      {ordenarIdsPorNombre(a.personas).map((pid) => {
                         const p = personas.find((x) => x.id === pid);
                         return <li key={pid}>{p?.nombre} {p?.apellido1}</li>;
                       })}
@@ -326,7 +338,7 @@ export default function AsistenciaPage() {
                           <strong>Completaron:</strong> {a.completaron.length}
                         </p>
                         <ul style={{ fontSize: 13, margin: "4px 0" }}>
-                          {a.completaron.map((pid) => {
+                          {ordenarIdsPorNombre(a.completaron).map((pid) => {
                             const p = personas.find((x) => x.id === pid);
                             return <li key={pid}>{p?.nombre} {p?.apellido1}</li>;
                           })}
