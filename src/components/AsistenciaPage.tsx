@@ -24,6 +24,13 @@ interface Asistencia {
   completaron: string[]; // IDs de personas que completaron el reto
 }
 
+type AsistenciaDoc = Partial<{
+  fecha: string;
+  personas: string[];
+  reto: Reto;
+  completaron: string[];
+}>;
+
 export default function AsistenciaPage() {
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -46,7 +53,16 @@ export default function AsistenciaPage() {
     try {
       setLoading(true);
       const snapshot = await getDocs(collection(db, "asistencias"));
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Asistencia));
+      const data = snapshot.docs.map((d) => {
+        const raw = d.data() as AsistenciaDoc;
+        return {
+          id: d.id,
+          fecha: raw.fecha ?? "",
+          personas: Array.isArray(raw.personas) ? raw.personas : [],
+          reto: raw.reto,
+          completaron: Array.isArray(raw.completaron) ? raw.completaron : [],
+        } as Asistencia;
+      });
       data.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
       setAsistencias(data);
     } catch (err) {
@@ -91,7 +107,6 @@ export default function AsistenciaPage() {
       await addDoc(collection(db, "asistencias"), {
         fecha: newFecha,
         personas: personasSeleccionadas,
-        reto: undefined,
         completaron: [],
         createdAt: new Date(),
       });
