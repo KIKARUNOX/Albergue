@@ -7,6 +7,7 @@ import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
 import ImportarJovenes from "./components/ImportarJovenes";
 import PersonasPage from "./components/PersonasPage";
+import AsistenciaPage from "./components/AsistenciaPage";
 import './App.css'
 import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -49,6 +50,7 @@ function App() {
       <nav style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
         <Link to="/">Dashboard</Link>
         <Link to="/personas">Personas</Link>
+        <Link to="/asistencias">Asistencias</Link>
         <Link to="/import">Importar</Link>
         <button onClick={() => void handleLogout()}>Cerrar sesion</button>
       </nav>
@@ -56,6 +58,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/personas" element={<PersonasPage />} />
+        <Route path="/asistencias" element={<AsistenciaPage />} />
         <Route path="/import" element={<ImportarJovenes />} />
         <Route path="/signup" element={<Navigate to="/" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
