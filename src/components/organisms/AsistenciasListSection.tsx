@@ -52,10 +52,10 @@ export default function AsistenciasListSection({
               <tbody>
                 {asistencias.map((a) => (
                   <tr key={a.id}>
-                    <td>{a.fecha}</td>
-                    <td>{a.personas.length}</td>
-                    <td>{a.reto ? a.reto.nombre : "Sin reto"}</td>
-                    <td>
+                    <td data-label="Fecha">{a.fecha}</td>
+                    <td data-label="Asistentes">{a.personas.length}</td>
+                    <td data-label="Reto">{a.reto ? a.reto.nombre : "Sin reto"}</td>
+                    <td data-label="Acciones">
                       <div className="table-actions">
                         <Button
                           variant="secondary"

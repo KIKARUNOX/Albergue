@@ -204,10 +204,10 @@ export default function PersonasManagementSection() {
               <tbody>
                 {filtered.map((p) => (
                   <tr key={p.id}>
-                    <td>{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
-                    <td>{p.email ?? "-"}</td>
-                    <td>{p.puntos ?? 0}</td>
-                    <td>
+                    <td data-label="Nombre">{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
+                    <td data-label="Email">{p.email ?? "-"}</td>
+                    <td data-label="Puntos">{p.puntos ?? 0}</td>
+                    <td data-label="Acciones">
                       <div className="table-actions">
                         <Button variant="secondary" onClick={() => setExpandedId((prev) => (prev === p.id ? "" : p.id))}>
                           {expandedId === p.id ? "Ocultar" : "Ver detalles"}
