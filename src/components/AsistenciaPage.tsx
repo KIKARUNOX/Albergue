@@ -1,36 +1,12 @@
-import { useState, useEffect } from "react";
-import { db } from "../firebase";
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { FirebaseError } from "firebase/app";
-
-interface Persona {
-  id: string;
-  nombre: string;
-  apellido1?: string;
-  apellido2?: string;
-  puntos?: number;
-}
-
-interface Reto {
-  nombre: string;
-  puntos: number;
-  descripcion?: string;
-}
-
-interface Asistencia {
-  id: string;
-  fecha: string;
-  personas: string[];
-  reto?: Reto;
-  completaron: string[]; 
-}
-
-type AsistenciaDoc = Partial<{
-  fecha: string;
-  personas: string[];
-  reto: Reto;
-  completaron: string[];
-}>;
+import { addDoc, collection, deleteDoc, doc, getDocs, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "../firebase";
+import type { Asistencia, AsistenciaDoc, Persona } from "../type/asistencia";
+import StatusMessage from "./atoms/StatusMessage";
+import AsistenciaCreationSection from "./organisms/AsistenciaCreationSection";
+import RetoSection from "./organisms/RetoSection";
+import AsistenciasListSection from "./organisms/AsistenciasListSection";
 
 export default function AsistenciaPage() {
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
@@ -38,17 +14,16 @@ export default function AsistenciaPage() {
   const [loading, setLoading] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [selectedAsistenciaId, setSelectedAsistenciaId] = useState("");
-  
+
   const [newFecha, setNewFecha] = useState("2026-03-07");
   const [personasSeleccionadas, setPersonasSeleccionadas] = useState<string[]>([]);
-  
+
   const [nombreReto, setNombreReto] = useState("");
   const [puntosReto, setPuntosReto] = useState(5);
   const [descripcionReto, setDescripcionReto] = useState("");
   const [personasCompletaron, setPersonasCompletaron] = useState<string[]>([]);
 
-  const nombreCompleto = (p?: Persona) =>
-    `${p?.nombre ?? ""} ${p?.apellido1 ?? ""} ${p?.apellido2 ?? ""}`.trim();
+  const nombreCompleto = (p?: Persona) => `${p?.nombre ?? ""} ${p?.apellido1 ?? ""} ${p?.apellido2 ?? ""}`.trim();
 
   const ordenarPersonas = (lista: Persona[]) =>
     [...lista].sort((a, b) => nombreCompleto(a).localeCompare(nombreCompleto(b), "es", { sensitivity: "base" }));
@@ -59,6 +34,11 @@ export default function AsistenciaPage() {
       const pb = personas.find((p) => p.id === b);
       return nombreCompleto(pa).localeCompare(nombreCompleto(pb), "es", { sensitivity: "base" });
     });
+
+  const nombrePersonaById = (id: string) => {
+    const p = personas.find((item) => item.id === id);
+    return p ? `${p.nombre} ${p.apellido1 ?? ""}`.trim() : "Persona desconocida";
+  };
 
   const cargarAsistencias = async () => {
     try {
@@ -78,7 +58,7 @@ export default function AsistenciaPage() {
       setAsistencias(data);
     } catch (err) {
       console.error("Error al cargar asistencias:", err);
-      setMensaje("Error al cargar asistencias");
+      setMensaje("Error al cargar asistencias.");
     } finally {
       setLoading(false);
     }
@@ -91,7 +71,7 @@ export default function AsistenciaPage() {
       setPersonas(ordenarPersonas(data));
     } catch (err) {
       console.error("Error al cargar personas:", err);
-      setMensaje("Error al cargar personas");
+      setMensaje("Error al cargar personas.");
     }
   };
 
@@ -100,14 +80,13 @@ export default function AsistenciaPage() {
     void cargarPersonas();
   }, []);
 
-  // Crear nueva asistencia
   const crearAsistencia = async () => {
     if (!newFecha) {
-      setMensaje("Selecciona una fecha");
+      setMensaje("Selecciona una fecha.");
       return;
     }
     if (personasSeleccionadas.length === 0) {
-      setMensaje("Selecciona al menos una persona");
+      setMensaje("Selecciona al menos una persona.");
       return;
     }
 
@@ -119,33 +98,32 @@ export default function AsistenciaPage() {
         completaron: [],
         createdAt: serverTimestamp(),
       });
-      
+
       setNewFecha("2026-03-07");
       setPersonasSeleccionadas([]);
-      setMensaje("✅ Asistencia creada");
+      setMensaje("Asistencia creada.");
       await cargarAsistencias();
     } catch (err) {
       console.error("Error al crear asistencia:", err);
       if (err instanceof FirebaseError && err.code === "permission-denied") {
-        setMensaje("No hay permisos para escribir en 'asistencias'. Revisa reglas de Firestore.");
+        setMensaje("No hay permisos para escribir en asistencias. Revisa reglas de Firestore.");
       } else {
-        setMensaje("Error al crear asistencia");
+        setMensaje("Error al crear asistencia.");
       }
     }
   };
 
-  // Agregar reto a asistencia
   const agregarReto = async () => {
     if (!selectedAsistenciaId) {
-      setMensaje("Selecciona una asistencia");
+      setMensaje("Selecciona una asistencia.");
       return;
     }
     if (!nombreReto) {
-      setMensaje("El nombre del reto es obligatorio");
+      setMensaje("El nombre del reto es obligatorio.");
       return;
     }
     if (personasCompletaron.length === 0) {
-      setMensaje("Selecciona al menos una persona que completó el reto");
+      setMensaje("Selecciona al menos una persona que completo el reto.");
       return;
     }
 
@@ -161,204 +139,88 @@ export default function AsistenciaPage() {
         completaron: personasCompletaron,
       });
 
-      // Sumar puntos a las personas que completaron
       for (const personaId of personasCompletaron) {
         const persona = personas.find((p) => p.id === personaId);
-        if (persona) {
-          const personaRef = doc(db, "personas", personaId);
-          const nuevosPuntos = (persona.puntos ?? 0) + puntosReto;
-          await updateDoc(personaRef, { puntos: nuevosPuntos });
-        }
+        if (!persona) continue;
+
+        const personaRef = doc(db, "personas", personaId);
+        const nuevosPuntos = (persona.puntos ?? 0) + puntosReto;
+        await updateDoc(personaRef, { puntos: nuevosPuntos });
       }
 
       setNombreReto("");
       setPuntosReto(5);
       setDescripcionReto("");
       setPersonasCompletaron([]);
-      setMensaje("🎯 Reto agregado y puntos asignados");
+      setMensaje("Reto agregado y puntos asignados.");
       await cargarAsistencias();
     } catch (err) {
       console.error("Error al agregar reto:", err);
-      setMensaje("Error al agregar reto");
+      setMensaje("Error al agregar reto.");
     }
   };
 
-  // Eliminar asistencia
   const eliminarAsistencia = async (id: string) => {
     if (!confirm("¿Eliminar esta asistencia?")) return;
+
     try {
       await deleteDoc(doc(db, "asistencias", id));
-      setMensaje("✅ Asistencia eliminada");
+      setMensaje("Asistencia eliminada.");
       await cargarAsistencias();
     } catch (err) {
       console.error("Error al eliminar:", err);
-      setMensaje("Error al eliminar");
+      setMensaje("Error al eliminar asistencia.");
     }
   };
 
   const togglePersonaSeleccionada = (id: string) => {
-    setPersonasSeleccionadas((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+    setPersonasSeleccionadas((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   };
 
-  const togglePersonaCompletó = (id: string) => {
-    setPersonasCompletaron((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+  const togglePersonaCompleto = (id: string) => {
+    setPersonasCompletaron((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   };
 
   return (
-    <div style={{ padding: 16 }}>
-      <h1>🎯 Gestión de Asistencias y Retos</h1>
-      {mensaje && <p style={{ color: mensaje.includes("✅") || mensaje.includes("🎯") ? "green" : "red" }}>{mensaje}</p>}
+    <div className="stack-md">
+      <h1>Gestion de asistencias y retos</h1>
+      <StatusMessage message={mensaje} />
 
-      {/* Crear nueva asistencia */}
-      <div style={{ border: "1px solid #ccc", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-        <h2>Nueva Asistencia (Sábado)</h2>
-        <label>
-          Fecha:
-          <input
-            type="date"
-            value={newFecha}
-            onChange={(e) => setNewFecha(e.target.value)}
-            style={{ marginLeft: 8 }}
-          />
-        </label>
+      <AsistenciaCreationSection
+        fecha={newFecha}
+        onFechaChange={setNewFecha}
+        personas={personas}
+        seleccionadas={personasSeleccionadas}
+        onTogglePersona={togglePersonaSeleccionada}
+        onCreate={() => void crearAsistencia()}
+        loading={loading}
+      />
 
-        <h3>Selecciona personas que asistieron:</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 12 }}>
-          {personas.map((p) => (
-            <label key={p.id} style={{ display: "flex", gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={personasSeleccionadas.includes(p.id)}
-                onChange={() => togglePersonaSeleccionada(p.id)}
-              />
-              {p.nombre} {p.apellido1}
-            </label>
-          ))}
-        </div>
+      <RetoSection
+        asistencias={asistencias}
+        selectedAsistenciaId={selectedAsistenciaId}
+        onSelectedAsistenciaId={setSelectedAsistenciaId}
+        nombreReto={nombreReto}
+        onNombreReto={setNombreReto}
+        puntosReto={puntosReto}
+        onPuntosReto={setPuntosReto}
+        descripcionReto={descripcionReto}
+        onDescripcionReto={setDescripcionReto}
+        personas={personas}
+        personasCompletaron={personasCompletaron}
+        onTogglePersonaCompleto={togglePersonaCompleto}
+        onAddReto={() => void agregarReto()}
+      />
 
-        <button onClick={() => void crearAsistencia()} disabled={loading}>
-          Crear Asistencia
-        </button>
-      </div>
-
-      {/* Agregar reto a asistencia */}
-      <div style={{ border: "1px solid #ccc", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-        <h2>🎯 Agregar Reto a Asistencia</h2>
-
-        <label>
-          Selecciona asistencia:
-          <select
-            value={selectedAsistenciaId}
-            onChange={(e) => setSelectedAsistenciaId(e.target.value)}
-            style={{ marginLeft: 8, width: "100%", marginBottom: 12 }}
-          >
-            <option value="">-- Selecciona --</option>
-            {asistencias.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.fecha} - {a.personas.length} personas {a.reto ? "✓ Con reto" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <input
-          type="text"
-          placeholder="Nombre del reto"
-          value={nombreReto}
-          onChange={(e) => setNombreReto(e.target.value)}
-          style={{ width: "100%", marginBottom: 8 }}
-        />
-
-        <input
-          type="number"
-          placeholder="Puntos"
-          value={puntosReto}
-          onChange={(e) => setPuntosReto(Number(e.target.value))}
-          style={{ width: "100%", marginBottom: 8 }}
-        />
-
-        <textarea
-          placeholder="Descripción (opcional)"
-          value={descripcionReto}
-          onChange={(e) => setDescripcionReto(e.target.value)}
-          style={{ width: "100%", marginBottom: 12, minHeight: 60 }}
-        />
-
-        <h3>Personas que completaron el reto:</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 12 }}>
-          {personas.map((p) => (
-            <label key={p.id} style={{ display: "flex", gap: 8 }}>
-              <input
-                type="checkbox"
-                checked={personasCompletaron.includes(p.id)}
-                onChange={() => togglePersonaCompletó(p.id)}
-              />
-              {p.nombre} {p.apellido1}
-            </label>
-          ))}
-        </div>
-
-        <button onClick={() => void agregarReto()}>Agregar Reto</button>
-      </div>
-
-      {/* Lista de asistencias */}
-      <div style={{ border: "1px solid #ccc", borderRadius: 8, padding: 16 }}>
-        <h2>Asistencias Registradas</h2>
-        {loading ? (
-          <p>Cargando...</p>
-        ) : asistencias.length === 0 ? (
-          <p>No hay asistencias registradas</p>
-        ) : (
-          <div style={{ display: "grid", gap: 16 }}>
-            {asistencias.map((a) => (
-              <div key={a.id} style={{ border: "1px solid #ddd", padding: 12, borderRadius: 6 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                  <div>
-                    <h3>📅 {a.fecha}</h3>
-                    <p>
-                      <strong>✓ Personas asistentes:</strong> {a.personas.length}
-                    </p>
-                    <ul style={{ fontSize: 14, margin: "4px 0" }}>
-                      {ordenarIdsPorNombre(a.personas).map((pid) => {
-                        const p = personas.find((x) => x.id === pid);
-                        return <li key={pid}>{p?.nombre} {p?.apellido1}</li>;
-                      })}
-                    </ul>
-
-                    {a.reto && (
-                      <>
-                        <p style={{ marginTop: 8 }}>
-                          <strong>🎯 Reto:</strong> {a.reto.nombre} (+{a.reto.puntos} pts)
-                        </p>
-                        {a.reto.descripcion && <p style={{ fontSize: 14, marginTop: 4 }}>{a.reto.descripcion}</p>}
-                        <p style={{ fontSize: 14, marginTop: 8 }}>
-                          <strong>Completaron:</strong> {a.completaron.length}
-                        </p>
-                        <ul style={{ fontSize: 13, margin: "4px 0" }}>
-                          {ordenarIdsPorNombre(a.completaron).map((pid) => {
-                            const p = personas.find((x) => x.id === pid);
-                            return <li key={pid}>{p?.nombre} {p?.apellido1}</li>;
-                          })}
-                        </ul>
-                      </>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => eliminarAsistencia(a.id)}
-                    style={{ background: "#ff6b6b", color: "white", padding: "6px 12px", borderRadius: 4 }}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <AsistenciasListSection
+        asistencias={asistencias}
+        loading={loading}
+        getNombrePersona={nombrePersonaById}
+        ordenarIdsPorNombre={ordenarIdsPorNombre}
+        onDelete={(id) => {
+          void eliminarAsistencia(id);
+        }}
+      />
     </div>
   );
 }
