@@ -161,3 +161,78 @@ button:disabled {
   padding: 0.85rem;
   background: #fff;
 }
+
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.birthday-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0.25rem;
+}
+
+.calendar-day {
+  min-height: 88px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.4rem;
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+}
+
+.calendar-day.is-empty {
+  background: rgba(228, 221, 211, 0.35);
+}
+
+.calendar-day.is-today {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px rgba(233, 92, 43, 0.2);
+}
+
+.calendar-day.has-birthday {
+  background: rgba(31, 143, 95, 0.1);
+  border-color: rgba(31, 143, 95, 0.45);
+}
+
+.calendar-day-number {
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.calendar-birthdays {
+  margin: 0;
+  padding-left: 0.9rem;
+  font-size: 0.8rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+@media (max-width: 740px) {
+  .calendar-head {
+    flex-wrap: wrap;
+  }
+
+  .calendar-day {
+    min-height: 78px;
+    padding: 0.3rem;
+  }
+
+  .calendar-birthdays {
+    font-size: 0.72rem;
+    padding-left: 0.75rem;
+  }
+}
