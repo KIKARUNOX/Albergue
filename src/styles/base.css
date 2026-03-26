@@ -79,3 +79,27 @@ ul {
   display: grid;
   gap: 1rem;
 }
+
+@media (max-width: 1024px) {
+  body {
+    font-size: 0.97rem;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 740px) {
+  body {
+    font-size: 0.93rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.25rem;
+  }
+}

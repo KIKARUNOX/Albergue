@@ -151,36 +151,38 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
         ) : null}
       </div>
 
-      <div className="birthday-calendar">
-        {weekDays.map((day) => (
-          <div key={day} className="calendar-weekday">
-            {day}
-          </div>
-        ))}
-
-        {calendarCells.map((day, index) => {
-          if (!day) {
-            return <div key={`empty-${index}`} className="calendar-day is-empty" />;
-          }
-
-          const birthdays = birthdaysByDay.get(day) ?? [];
-          const isBirthday = birthdays.length > 0;
-          const isToday =
-            day === now.getDate() && monthIndex === now.getMonth() && year === now.getFullYear();
-
-          return (
-            <div key={`day-${day}-${index}`} className={`calendar-day${isBirthday ? " has-birthday" : ""}${isToday ? " is-today" : ""}`}>
-              <div className="calendar-day-number">{day}</div>
-              {isBirthday ? (
-                <ul className="calendar-birthdays">
-                  {birthdays.map((p, i) => (
-                    <li key={`${p.nombre}-${i}`}>{`${p.nombre} ${p.apellido1 ?? ""}`.trim()}</li>
-                  ))}
-                </ul>
-              ) : null}
+      <div className="calendar-scroll">
+        <div className="birthday-calendar">
+          {weekDays.map((day) => (
+            <div key={day} className="calendar-weekday">
+              {day}
             </div>
-          );
-        })}
+          ))}
+
+          {calendarCells.map((day, index) => {
+            if (!day) {
+              return <div key={`empty-${index}`} className="calendar-day is-empty" />;
+            }
+
+            const birthdays = birthdaysByDay.get(day) ?? [];
+            const isBirthday = birthdays.length > 0;
+            const isToday =
+              day === now.getDate() && monthIndex === now.getMonth() && year === now.getFullYear();
+
+            return (
+              <div key={`day-${day}-${index}`} className={`calendar-day${isBirthday ? " has-birthday" : ""}${isToday ? " is-today" : ""}`}>
+                <div className="calendar-day-number">{day}</div>
+                {isBirthday ? (
+                  <ul className="calendar-birthdays">
+                    {birthdays.map((p, i) => (
+                      <li key={`${p.nombre}-${i}`}>{`${p.nombre} ${p.apellido1 ?? ""}`.trim()}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </PageSection>
   );

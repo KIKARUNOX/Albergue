@@ -39,42 +39,44 @@ export default function AsistenciasListSection({
         <p>No hay asistencias registradas.</p>
       ) : (
         <div className="stack-sm">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Asistentes</th>
-                <th>Reto</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {asistencias.map((a) => (
-                <tr key={a.id}>
-                  <td>{a.fecha}</td>
-                  <td>{a.personas.length}</td>
-                  <td>{a.reto ? a.reto.nombre : "Sin reto"}</td>
-                  <td>
-                    <div className="table-actions">
-                      <Button
-                        variant="secondary"
-                        onClick={() => setExpandedId((prev) => (prev === a.id ? "" : a.id))}
-                      >
-                        {expandedId === a.id ? "Ocultar" : "Ver detalles"}
-                      </Button>
-                      <Button variant="secondary" onClick={() => startEdit(a)}>
-                        Editar
-                      </Button>
-                      <Button onClick={() => onOpenReto(a.id)}>Agregar reto</Button>
-                      <Button variant="danger" onClick={() => onDelete(a.id)}>
-                        Eliminar
-                      </Button>
-                    </div>
-                  </td>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Asistentes</th>
+                  <th>Reto</th>
+                  <th>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {asistencias.map((a) => (
+                  <tr key={a.id}>
+                    <td>{a.fecha}</td>
+                    <td>{a.personas.length}</td>
+                    <td>{a.reto ? a.reto.nombre : "Sin reto"}</td>
+                    <td>
+                      <div className="table-actions">
+                        <Button
+                          variant="secondary"
+                          onClick={() => setExpandedId((prev) => (prev === a.id ? "" : a.id))}
+                        >
+                          {expandedId === a.id ? "Ocultar" : "Ver detalles"}
+                        </Button>
+                        <Button variant="secondary" onClick={() => startEdit(a)}>
+                          Editar
+                        </Button>
+                        <Button onClick={() => onOpenReto(a.id)}>Agregar reto</Button>
+                        <Button variant="danger" onClick={() => onDelete(a.id)}>
+                          Eliminar
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {asistencias.map((a) => {
             if (expandedId !== a.id) return null;

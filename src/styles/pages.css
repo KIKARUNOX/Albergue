@@ -34,3 +34,24 @@
   display: grid;
   gap: 1rem;
 }
+
+@media (max-width: 1024px) {
+  .auth-card {
+    width: min(520px, 96vw);
+  }
+}
+
+@media (max-width: 740px) {
+  .auth-layout {
+    padding: 0.8rem;
+  }
+
+  .auth-card {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .page-stack {
+    gap: 0.8rem;
+  }
+}

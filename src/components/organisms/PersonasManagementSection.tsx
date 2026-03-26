@@ -191,35 +191,37 @@ export default function PersonasManagementSection() {
         <p>Cargando personas...</p>
       ) : (
         <>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Puntos</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id}>
-                  <td>{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
-                  <td>{p.email ?? "-"}</td>
-                  <td>{p.puntos ?? 0}</td>
-                  <td>
-                    <div className="table-actions">
-                      <Button variant="secondary" onClick={() => setExpandedId((prev) => (prev === p.id ? "" : p.id))}>
-                        {expandedId === p.id ? "Ocultar" : "Ver detalles"}
-                      </Button>
-                      <Button variant="secondary" onClick={() => abrirEdicion(p)}>
-                        Editar
-                      </Button>
-                    </div>
-                  </td>
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Puntos</th>
+                  <th>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map((p) => (
+                  <tr key={p.id}>
+                    <td>{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
+                    <td>{p.email ?? "-"}</td>
+                    <td>{p.puntos ?? 0}</td>
+                    <td>
+                      <div className="table-actions">
+                        <Button variant="secondary" onClick={() => setExpandedId((prev) => (prev === p.id ? "" : p.id))}>
+                          {expandedId === p.id ? "Ocultar" : "Ver detalles"}
+                        </Button>
+                        <Button variant="secondary" onClick={() => abrirEdicion(p)}>
+                          Editar
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {filtered.map((p) => {
             if (expandedId !== p.id) return null;
