@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -49,30 +49,30 @@ export default function Signup() {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "20px", border: "1px solid #ccc", borderRadius: "8px" }}>
+    <div className="auth-layout">
+      <section className="auth-card">
+      <p className="eyebrow">Codigo316</p>
       <h2>Crear Cuenta</h2>
-      <form onSubmit={handleSignup}>
+      <p className="auth-subtitle">Registra un nuevo administrador en el sistema.</p>
+      <form className="stack" onSubmit={handleSignup}>
         <input
           type="text"
           placeholder="Nombre"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
-          style={{ width: "100%", padding: "8px", margin: "10px 0" }}
         />
         <input
           type="text"
           placeholder="Apellido 1"
           value={apellido1}
           onChange={(e) => setApellido1(e.target.value)}
-          style={{ width: "100%", padding: "8px", margin: "10px 0" }}
         />
         <input
           type="text"
           placeholder="Apellido 2"
           value={apellido2}
           onChange={(e) => setApellido2(e.target.value)}
-          style={{ width: "100%", padding: "8px", margin: "10px 0" }}
         />
         <input
           type="email"
@@ -80,7 +80,6 @@ export default function Signup() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          style={{ width: "100%", padding: "8px", margin: "10px 0" }}
         />
         <input
           type="password"
@@ -88,16 +87,16 @@ export default function Signup() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          style={{ width: "100%", padding: "8px", margin: "10px 0" }}
         />
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: "100%", padding: "10px", marginTop: "10px" }}>
+        {error && <p className="form-message error">{error}</p>}
+        <button className="btn-primary" type="submit" disabled={loading}>
           {loading ? "Registrando..." : "Registrarse"}
         </button>
       </form>
-      <p>
-        ¿Ya tienes cuenta? <a href="/">Inicia sesión</a>
+      <p className="auth-footer">
+        ¿Ya tienes cuenta? <Link to="/">Inicia sesion</Link>
       </p>
+      </section>
     </div>
   );
 }

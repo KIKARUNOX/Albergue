@@ -9,7 +9,7 @@ import ImportarJovenes from "./components/ImportarJovenes";
 import PersonasPage from "./components/PersonasPage";
 import AsistenciaPage from "./components/AsistenciaPage";
 import './App.css'
-import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { signOut } from "firebase/auth";
 
 function App() {
@@ -32,7 +32,7 @@ function App() {
   }, []);
 
   if (loading) {
-    return <div>Cargando...</div>;
+    return <div className="loading-state">Cargando...</div>;
   }
 
   if (!user) {
@@ -46,23 +46,42 @@ function App() {
   }
 
   return (
-    <div>
-      <nav style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
-        <Link to="/">Dashboard</Link>
-        <Link to="/personas">Personas</Link>
-        <Link to="/asistencias">Asistencias</Link>
-        <Link to="/import">Importar</Link>
-        <button onClick={() => void handleLogout()}>Cerrar sesion</button>
+    <div className="app-shell">
+      <header className="app-header">
+        <div>
+          <p className="eyebrow">Codigo316</p>
+          <h1 className="app-title">Panel de Administracion</h1>
+        </div>
+        <button className="btn-primary" onClick={() => void handleLogout()}>
+          Cerrar sesion
+        </button>
+      </header>
+
+      <nav className="app-nav" aria-label="Secciones principales">
+        <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          Dashboard
+        </NavLink>
+        <NavLink to="/personas" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          Personas
+        </NavLink>
+        <NavLink to="/asistencias" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          Asistencias
+        </NavLink>
+        <NavLink to="/import" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          Importar
+        </NavLink>
       </nav>
 
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/personas" element={<PersonasPage />} />
-        <Route path="/asistencias" element={<AsistenciaPage />} />
-        <Route path="/import" element={<ImportarJovenes />} />
-        <Route path="/signup" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <main className="page-body">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/personas" element={<PersonasPage />} />
+          <Route path="/asistencias" element={<AsistenciaPage />} />
+          <Route path="/import" element={<ImportarJovenes />} />
+          <Route path="/signup" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
     </div>
   );
 }

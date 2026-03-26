@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 
@@ -8,7 +9,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const login = async () => {
+  const login = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setError("");
     
     if (!email || !password) {
@@ -28,24 +30,30 @@ export default function Login() {
   };
 
   return (
-    <div className="container">
-      <h2>Login Admin</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      <input 
-        placeholder="Email" 
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)} 
-      />
-      <input 
-        type="password" 
-        placeholder="Password" 
-        value={password}
-        onChange={(e) => setPassword(e.target.value)} 
-      />
-      <button onClick={login} disabled={loading}>
-        {loading ? "Ingresando..." : "Ingresar"}
-      </button>
+    <div className="auth-layout">
+      <section className="auth-card">
+        <p className="eyebrow">Codigo316</p>
+        <h2>Login Admin</h2>
+        <p className="auth-subtitle">Ingresa con tu cuenta para gestionar asistencia y puntos.</p>
+        <form className="stack" onSubmit={login}>
+          {error && <p className="form-message error">{error}</p>}
+          <input
+            placeholder="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button className="btn-primary" type="submit" disabled={loading}>
+            {loading ? "Ingresando..." : "Ingresar"}
+          </button>
+        </form>
+      </section>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, updateDoc, doc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { FirebaseError } from "firebase/app";
 
 interface Persona {
   id: string;
@@ -19,9 +20,9 @@ interface Reto {
 interface Asistencia {
   id: string;
   fecha: string;
-  personas: string[]; // IDs de personas que asistieron
+  personas: string[];
   reto?: Reto;
-  completaron: string[]; // IDs de personas que completaron el reto
+  completaron: string[]; 
 }
 
 type AsistenciaDoc = Partial<{
@@ -38,11 +39,9 @@ export default function AsistenciaPage() {
   const [mensaje, setMensaje] = useState("");
   const [selectedAsistenciaId, setSelectedAsistenciaId] = useState("");
   
-  // Formulario nueva asistencia
   const [newFecha, setNewFecha] = useState("2026-03-07");
   const [personasSeleccionadas, setPersonasSeleccionadas] = useState<string[]>([]);
   
-  // Formulario reto
   const [nombreReto, setNombreReto] = useState("");
   const [puntosReto, setPuntosReto] = useState(5);
   const [descripcionReto, setDescripcionReto] = useState("");
@@ -61,7 +60,6 @@ export default function AsistenciaPage() {
       return nombreCompleto(pa).localeCompare(nombreCompleto(pb), "es", { sensitivity: "base" });
     });
 
-  // Cargar asistencias
   const cargarAsistencias = async () => {
     try {
       setLoading(true);
@@ -86,7 +84,6 @@ export default function AsistenciaPage() {
     }
   };
 
-  // Cargar personas
   const cargarPersonas = async () => {
     try {
       const snapshot = await getDocs(collection(db, "personas"));
@@ -120,7 +117,7 @@ export default function AsistenciaPage() {
         fecha: newFecha,
         personas: personasSeleccionadas,
         completaron: [],
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       });
       
       setNewFecha("2026-03-07");
@@ -129,7 +126,11 @@ export default function AsistenciaPage() {
       await cargarAsistencias();
     } catch (err) {
       console.error("Error al crear asistencia:", err);
-      setMensaje("Error al crear asistencia");
+      if (err instanceof FirebaseError && err.code === "permission-denied") {
+        setMensaje("No hay permisos para escribir en 'asistencias'. Revisa reglas de Firestore.");
+      } else {
+        setMensaje("Error al crear asistencia");
+      }
     }
   };
 
