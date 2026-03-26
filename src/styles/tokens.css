@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
+
+:root {
+  --surface: #f5f2ec;
+  --paper: #ffffff;
+  --ink: #2d2a2a;
+  --muted: #6f6b66;
+  --brand: #e95c2b;
+  --brand-dark: #b9401a;
+  --line: #e4ddd3;
+  --success: #1f8f5f;
+  --danger: #b42318;
+  --shadow: 0 18px 32px -24px rgba(39, 26, 10, 0.45);
+}

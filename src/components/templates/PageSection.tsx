@@ -1,9 +1,4 @@
-import type { ReactNode } from "react";
-
-type PageSectionProps = {
-  title: string;
-  children: ReactNode;
-};
+import type { PageSectionProps } from "../../type/componentProps";
 
 export default function PageSection({ title, children }: PageSectionProps) {
   return (

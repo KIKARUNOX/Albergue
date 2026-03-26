@@ -1,10 +1,4 @@
-import type { Persona } from "../../type/asistencia";
-
-type PersonCheckboxGridProps = {
-  personas: Persona[];
-  selectedIds: string[];
-  onToggle: (id: string) => void;
-};
+import type { PersonCheckboxGridProps } from "../../type/componentProps";
 
 export default function PersonCheckboxGrid({ personas, selectedIds, onToggle }: PersonCheckboxGridProps) {
   return (

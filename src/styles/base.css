@@ -1,0 +1,81 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  font-family: 'Barlow', 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(900px 420px at 100% -10%, rgba(233, 92, 43, 0.16), transparent 65%),
+    radial-gradient(760px 360px at -10% 110%, rgba(56, 132, 255, 0.12), transparent 62%),
+    var(--surface);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 0.65rem;
+  color: var(--ink);
+  font-family: 'Fraunces', Georgia, serif;
+  line-height: 1.2;
+}
+
+p {
+  margin: 0;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.62rem 0.78rem;
+  color: var(--ink);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(233, 92, 43, 0.15);
+}
+
+ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.stack-sm {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.stack-md {
+  display: grid;
+  gap: 1rem;
+}

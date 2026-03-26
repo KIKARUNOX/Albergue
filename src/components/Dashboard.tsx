@@ -1,12 +1,5 @@
-import CalendarView from "./CalendarView";
-import Leaderboard from "./Leaderboard";
+import DashboardPage from "./pages/DashboardPage";
 
 export default function Dashboard() {
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <CalendarView onlyCurrentMonth />
-      <Leaderboard limit={5} showControls={false} />
-    </div>
-  );
+  return <DashboardPage />;
 }

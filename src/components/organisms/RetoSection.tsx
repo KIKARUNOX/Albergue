@@ -1,23 +1,7 @@
-import type { Asistencia, Persona } from "../../type/asistencia";
+import type { RetoSectionProps } from "../../type/componentProps";
 import Button from "../atoms/Button";
 import PersonCheckboxGrid from "../molecules/PersonCheckboxGrid";
 import PageSection from "../templates/PageSection";
-
-type RetoSectionProps = {
-  asistencias: Asistencia[];
-  selectedAsistenciaId: string;
-  onSelectedAsistenciaId: (id: string) => void;
-  nombreReto: string;
-  onNombreReto: (value: string) => void;
-  puntosReto: number;
-  onPuntosReto: (value: number) => void;
-  descripcionReto: string;
-  onDescripcionReto: (value: string) => void;
-  personas: Persona[];
-  personasCompletaron: string[];
-  onTogglePersonaCompleto: (id: string) => void;
-  onAddReto: () => void;
-};
 
 export default function RetoSection({
   asistencias,

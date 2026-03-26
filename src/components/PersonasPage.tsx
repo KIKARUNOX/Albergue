@@ -1,14 +1,5 @@
-import RegistrarPersona from "./RegistrarPersona";
-import SearchBar from "./SearchBar";
-import EditarPersonas from "./EditarPersonas";
+import PersonasPageView from "./pages/PersonasPageView";
 
 export default function PersonasPage() {
-  return (
-    <div>
-      <h1>Gestion de personas</h1>
-      <RegistrarPersona />
-      <SearchBar />
-      <EditarPersonas />
-    </div>
-  );
+  return <PersonasPageView />;
 }

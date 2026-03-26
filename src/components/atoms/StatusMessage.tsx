@@ -1,6 +1,4 @@
-type StatusMessageProps = {
-  message: string;
-};
+import type { StatusMessageProps } from "../../type/componentProps";
 
 export default function StatusMessage({ message }: StatusMessageProps) {
   if (!message) return null;

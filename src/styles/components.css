@@ -1,0 +1,163 @@
+.btn-primary,
+button {
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--brand), #ef7b32);
+  color: #fff;
+  font-weight: 700;
+  padding: 0.62rem 1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.btn-primary:hover,
+button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.btn-primary:disabled,
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #c74632, #a82713);
+  color: #fff;
+}
+
+.form-message {
+  border-radius: 10px;
+  padding: 0.62rem 0.7rem;
+  font-weight: 500;
+}
+
+.form-message.error {
+  background: rgba(180, 35, 24, 0.1);
+  color: var(--danger);
+}
+
+.form-message.success {
+  background: rgba(31, 143, 95, 0.12);
+  color: var(--success);
+}
+
+.container,
+.page-card,
+.section-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.5rem;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.checkbox-item input {
+  width: auto;
+}
+
+.list-item-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.list-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.compact-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.95rem;
+}
+
+.small-text {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.inline-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+  margin-left: 0.5rem;
+}
+
+.inline-actions .btn-primary,
+.inline-actions .btn-secondary,
+.inline-actions .btn-danger {
+  padding: 0.25rem 0.55rem;
+  border-radius: 8px;
+}
+
+.table-toolbar {
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.65rem 0.7rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th {
+  background: rgba(233, 92, 43, 0.08);
+  font-weight: 700;
+}
+
+.data-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.detail-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem;
+  background: #fff;
+}

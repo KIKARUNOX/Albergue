@@ -1,11 +1,11 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
+import type { ExcelRow } from "../../type/componentProps";
+import PageSection from "../templates/PageSection";
 
-type ExcelRow = Record<string, unknown>;
-
-export default function ImportarJovenes() {
+export default function ImportarJovenesSection() {
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState("");
 
@@ -113,7 +113,7 @@ export default function ImportarJovenes() {
         }
       }
 
-      setResultado(`Importación completada. Correctos: ${ok}, Fallidos: ${fail}`);
+      setResultado(`Importacion completada. Correctos: ${ok}, Fallidos: ${fail}`);
     } catch (err) {
       console.error(err);
       setResultado("Error leyendo el archivo Excel.");
@@ -124,12 +124,14 @@ export default function ImportarJovenes() {
   };
 
   return (
-    <div style={{ maxWidth: 500, margin: "20px auto", border: "1px solid #ccc", padding: 16, borderRadius: 8 }}>
-      <h3>Importar jóvenes desde Excel</h3>
-      <p>Encabezados soportados: NOMBRE, PRIMER APELLIDO, SEGUNDO APELLIDO, EDAD, FECHA NACIMIENTO, TELEFONO, LOCALIDAD, BAUTIZADO</p>
+    <PageSection title="Importar jovenes desde Excel">
+      <p className="small-text">
+        Encabezados soportados: NOMBRE, PRIMER APELLIDO, SEGUNDO APELLIDO, EDAD, FECHA NACIMIENTO, TELEFONO,
+        LOCALIDAD, BAUTIZADO.
+      </p>
       <input type="file" accept=".xlsx,.xls" onChange={onFileChange} disabled={loading} />
-      {loading && <p>Cargando...</p>}
-      {resultado && <p>{resultado}</p>}
-    </div>
+      {loading ? <p>Cargando...</p> : null}
+      {resultado ? <p>{resultado}</p> : null}
+    </PageSection>
   );
 }

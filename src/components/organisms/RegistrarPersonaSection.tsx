@@ -1,20 +1,13 @@
 import { useState } from "react";
 import type { SyntheticEvent } from "react";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
+import type { RegistrarPersonaFormData } from "../../type/componentProps";
+import Button from "../atoms/Button";
+import StatusMessage from "../atoms/StatusMessage";
+import PageSection from "../templates/PageSection";
 
-type FormData = {
-  nombre: string;
-  apellido1: string;
-  apellido2: string;
-  email: string;
-  telefono: string;
-  localidad: string;
-  fechaNacimiento: string;
-  bautizado: boolean;
-};
-
-const initialForm: FormData = {
+const initialForm: RegistrarPersonaFormData = {
   nombre: "",
   apellido1: "",
   apellido2: "",
@@ -25,12 +18,15 @@ const initialForm: FormData = {
   bautizado: false,
 };
 
-export default function RegistrarPersona() {
-  const [form, setForm] = useState<FormData>(initialForm);
+export default function RegistrarPersonaSection() {
+  const [form, setForm] = useState<RegistrarPersonaFormData>(initialForm);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
-  const updateField = <K extends keyof FormData>(field: K, value: FormData[K]) => {
+  const updateField = <K extends keyof RegistrarPersonaFormData>(
+    field: K,
+    value: RegistrarPersonaFormData[K],
+  ) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -70,9 +66,8 @@ export default function RegistrarPersona() {
   };
 
   return (
-    <div style={{ border: "1px solid #ccc", borderRadius: 8, padding: 16, marginBottom: 16 }}>
-      <h2>Registrar persona</h2>
-      <form onSubmit={handleSubmit} style={{ display: "grid", gap: 8 }}>
+    <PageSection title="Registrar persona">
+      <form onSubmit={handleSubmit} className="stack-sm">
         <input
           placeholder="Nombre *"
           value={form.nombre}
@@ -113,20 +108,20 @@ export default function RegistrarPersona() {
             onChange={(e) => updateField("fechaNacimiento", e.target.value)}
           />
         </label>
-        <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <label className="checkbox-item">
           <input
             type="checkbox"
             checked={form.bautizado}
             onChange={(e) => updateField("bautizado", e.target.checked)}
           />
-          Bautizado
+          <span>Bautizado</span>
         </label>
 
-        <button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving}>
           {saving ? "Guardando..." : "Registrar"}
-        </button>
+        </Button>
       </form>
-      {mensaje && <p>{mensaje}</p>}
-    </div>
+      <StatusMessage message={mensaje} />
+    </PageSection>
   );
 }

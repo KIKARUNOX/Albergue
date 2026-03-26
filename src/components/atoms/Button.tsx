@@ -1,11 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
-
-type ButtonVariant = "primary" | "secondary" | "danger";
-
-type ButtonProps = {
-  children: ReactNode;
-  variant?: ButtonVariant;
-} & ButtonHTMLAttributes<HTMLButtonElement>;
+import type { ButtonProps } from "../../type/componentProps";
 
 export default function Button({ children, variant = "primary", className = "", ...props }: ButtonProps) {
   const variantClass = variant === "primary" ? "btn-primary" : variant === "danger" ? "btn-danger" : "btn-secondary";

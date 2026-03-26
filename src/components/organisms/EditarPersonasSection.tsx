@@ -1,23 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
+import type { PersonaDetalle, PersonaForm } from "../../type/persona";
+import Button from "../atoms/Button";
+import StatusMessage from "../atoms/StatusMessage";
+import PageSection from "../templates/PageSection";
 
-type Persona = {
-  id: string;
-  nombre: string;
-  apellido1?: string;
-  apellido2?: string;
-  email?: string;
-  telefono?: string;
-  localidad?: string;
-  fechaNacimiento?: string;
-  bautizado?: boolean;
-  puntos?: number;
-};
-
-type EditablePersona = Omit<Persona, "id">;
-
-const emptyForm: EditablePersona = {
+const emptyForm: PersonaForm = {
   nombre: "",
   apellido1: "",
   apellido2: "",
@@ -29,11 +18,11 @@ const emptyForm: EditablePersona = {
   puntos: 0,
 };
 
-export default function EditarPersonas() {
-  const [personas, setPersonas] = useState<Persona[]>([]);
+export default function EditarPersonasSection() {
+  const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
-  const [form, setForm] = useState<EditablePersona>(emptyForm);
+  const [form, setForm] = useState<PersonaForm>(emptyForm);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
@@ -44,7 +33,7 @@ export default function EditarPersonas() {
 
     try {
       const snapshot = await getDocs(collection(db, "personas"));
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Persona));
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
       data.sort((a, b) => {
         const na = `${a.nombre} ${a.apellido1 ?? ""} ${a.apellido2 ?? ""}`.toLowerCase();
         const nb = `${b.nombre} ${b.apellido1 ?? ""} ${b.apellido2 ?? ""}`.toLowerCase();
@@ -134,23 +123,16 @@ export default function EditarPersonas() {
   };
 
   return (
-    <div style={{ border: "1px solid #ccc", borderRadius: 8, padding: 16 }}>
-      <h2>Editar personas</h2>
-
+    <PageSection title="Editar personas">
       <input
         placeholder="Buscar por nombre..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        style={{ width: "100%", marginBottom: 8 }}
       />
 
       {loading ? <p>Cargando personas...</p> : null}
 
-      <select
-        value={selectedId}
-        onChange={(e) => seleccionar(e.target.value)}
-        style={{ width: "100%", marginBottom: 12 }}
-      >
+      <select value={selectedId} onChange={(e) => seleccionar(e.target.value)}>
         <option value="">Selecciona una persona</option>
         {filtered.map((p) => (
           <option key={p.id} value={p.id}>
@@ -159,7 +141,7 @@ export default function EditarPersonas() {
         ))}
       </select>
 
-      <div style={{ display: "grid", gap: 8 }}>
+      <div className="stack-sm">
         <input
           placeholder="Nombre"
           value={form.nombre}
@@ -199,13 +181,13 @@ export default function EditarPersonas() {
             onChange={(e) => setForm((prev) => ({ ...prev, fechaNacimiento: e.target.value }))}
           />
         </label>
-        <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <label className="checkbox-item">
           <input
             type="checkbox"
             checked={form.bautizado}
             onChange={(e) => setForm((prev) => ({ ...prev, bautizado: e.target.checked }))}
           />
-          Bautizado
+          <span>Bautizado</span>
         </label>
         <input
           type="number"
@@ -214,12 +196,12 @@ export default function EditarPersonas() {
           onChange={(e) => setForm((prev) => ({ ...prev, puntos: Number(e.target.value) || 0 }))}
         />
 
-        <button type="button" onClick={() => void guardar()} disabled={saving}>
+        <Button type="button" onClick={() => void guardar()} disabled={saving}>
           {saving ? "Guardando..." : "Guardar cambios"}
-        </button>
+        </Button>
       </div>
 
-      {mensaje ? <p>{mensaje}</p> : null}
-    </div>
+      <StatusMessage message={mensaje} />
+    </PageSection>
   );
 }
