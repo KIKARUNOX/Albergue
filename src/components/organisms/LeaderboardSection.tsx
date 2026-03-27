@@ -51,17 +51,67 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
   };
 
   const visibles = limit ? personas.slice(0, limit) : personas;
+  const shouldRenderPodium = !showControls && limit === 5;
+
+  const renderPersonaLabel = (p: PersonaPuntaje) =>
+    `${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.replace(/\s+/g, " ").trim();
+
+  const podiumLeaders = shouldRenderPodium
+    ? [
+        { persona: visibles[1], rank: 2 },
+        { persona: visibles[0], rank: 1 },
+        { persona: visibles[2], rank: 3 },
+      ]
+    : [];
+
+  const podiumChasers = shouldRenderPodium
+    ? [
+        { persona: visibles[3], rank: 4 },
+        { persona: visibles[4], rank: 5 },
+      ]
+    : [];
 
   return (
     <PageSection title={limit ? `Top ${limit} personas` : "Leaderboard"}>
       {error ? <p className="form-message error">{error}</p> : null}
-      <ul className="compact-list">
-        {visibles.length === 0 ? (
+      {visibles.length === 0 ? (
+        <ul className="compact-list">
           <li>No hay personas registradas</li>
-        ) : (
-          visibles.map((p) => (
+        </ul>
+      ) : shouldRenderPodium ? (
+        <div className="leaderboard-podium" aria-label="Podio top 5">
+          <div className="leaderboard-podium-top">
+            {podiumLeaders.map(({ persona, rank }) =>
+              persona ? (
+                <article
+                  key={persona.id}
+                  className={`podium-card podium-rank-${rank}${rank === 1 ? " is-winner" : ""}`}
+                >
+                  <div className="podium-rank-label">#{rank}</div>
+                  <strong className="podium-name">{renderPersonaLabel(persona)}</strong>
+                  <span className="podium-points">{persona.puntos ?? 0} puntos</span>
+                </article>
+              ) : null,
+            )}
+          </div>
+
+          <div className="leaderboard-podium-rest">
+            {podiumChasers.map(({ persona, rank }) =>
+              persona ? (
+                <article key={persona.id} className={`podium-card podium-rank-${rank}`}>
+                  <div className="podium-rank-label">#{rank}</div>
+                  <strong className="podium-name">{renderPersonaLabel(persona)}</strong>
+                  <span className="podium-points">{persona.puntos ?? 0} puntos</span>
+                </article>
+              ) : null,
+            )}
+          </div>
+        </div>
+      ) : (
+        <ul className="compact-list">
+          {visibles.map((p) => (
             <li key={p.id}>
-              {p.nombre} {p.apellido1} {p.apellido2} - {p.puntos ?? 0} puntos
+              {renderPersonaLabel(p)} - {p.puntos ?? 0} puntos
               {showControls ? (
                 <span className="inline-actions">
                   <Button onClick={() => void sumar(p.id, p.puntos ?? 0)}>+</Button>
@@ -71,9 +121,9 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
                 </span>
               ) : null}
             </li>
-          ))
-        )}
-      </ul>
+          ))}
+        </ul>
+      )}
     </PageSection>
   );
 }

@@ -117,6 +117,82 @@ button:disabled {
   border-radius: 8px;
 }
 
+.leaderboard-podium {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.leaderboard-podium-top {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  align-items: end;
+}
+
+.leaderboard-podium-rest {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.podium-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.72rem;
+  display: grid;
+  gap: 0.32rem;
+}
+
+.podium-rank-label {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.12rem 0.48rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: rgba(27, 35, 49, 0.08);
+  color: var(--ink);
+}
+
+.podium-name {
+  line-height: 1.22;
+}
+
+.podium-points {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.podium-rank-1 {
+  background: linear-gradient(180deg, rgba(233, 92, 43, 0.18), rgba(233, 92, 43, 0.07));
+  border-color: rgba(233, 92, 43, 0.5);
+  min-height: 9rem;
+}
+
+.podium-rank-2 {
+  background: linear-gradient(180deg, rgba(34, 45, 58, 0.14), rgba(34, 45, 58, 0.06));
+  border-color: rgba(34, 45, 58, 0.35);
+  min-height: 8rem;
+}
+
+.podium-rank-3 {
+  background: linear-gradient(180deg, rgba(139, 88, 43, 0.17), rgba(139, 88, 43, 0.07));
+  border-color: rgba(139, 88, 43, 0.45);
+  min-height: 7rem;
+}
+
+.podium-rank-1 .podium-rank-label {
+  background: rgba(233, 92, 43, 0.2);
+}
+
+.podium-rank-2 .podium-rank-label {
+  background: rgba(34, 45, 58, 0.2);
+}
+
+.podium-rank-3 .podium-rank-label {
+  background: rgba(139, 88, 43, 0.24);
+}
+
 .table-toolbar {
   display: grid;
   gap: 0.6rem;
@@ -240,11 +316,12 @@ button:disabled {
 }
 
 .birthday-rac-calendar {
-  width: min(100%, 42rem);
+  width: min(100%, 60rem);
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #fff;
-  padding: 1rem;
+  padding: 1.2rem 1.35rem;
+  margin-inline: auto;
 }
 
 .birthday-rac-calendar-head {
@@ -255,7 +332,7 @@ button:disabled {
 
 .birthday-rac-heading {
   margin: 0;
-  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-size: clamp(1.9rem, 2.8vw, 2.5rem);
   font-weight: 800;
   text-transform: lowercase;
 }
@@ -263,12 +340,12 @@ button:disabled {
 .birthday-rac-grid {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0.38rem;
+  border-spacing: 0.56rem;
 }
 
 .birthday-rac-weekday {
   text-align: center;
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--muted);
   text-transform: lowercase;
@@ -276,11 +353,11 @@ button:disabled {
 }
 
 .birthday-rac-cell {
-  width: 3.25rem;
-  height: 3.25rem;
-  border-radius: 10px;
+  width: clamp(3.25rem, 5vw, 4.5rem);
+  height: clamp(3.25rem, 5vw, 4.5rem);
+  border-radius: 12px;
   border: 1px solid transparent;
-  font-size: 1.08rem;
+  font-size: clamp(1.08rem, 1.6vw, 1.38rem);
   font-weight: 700;
   display: grid;
   place-items: center;
@@ -306,17 +383,19 @@ button:disabled {
 
 .calendar-all-birthdays {
   margin-top: 0.6rem;
+  max-width: 60rem;
+  margin-inline: auto;
 }
 
 .calendar-all-birthdays h4 {
   margin: 0 0 0.65rem;
-  font-size: clamp(1.15rem, 2vw, 1.35rem);
+  font-size: clamp(1.3rem, 2.1vw, 1.55rem);
 }
 
 .calendar-birthdays-list {
   margin: 0;
   padding-left: 1.1rem;
-  font-size: 1.04rem;
+  font-size: 1.15rem;
 }
 
 @media (max-width: 1024px) {
@@ -343,6 +422,10 @@ button:disabled {
     width: 2.95rem;
     height: 2.95rem;
     font-size: 1rem;
+  }
+
+  .podium-card {
+    padding: 0.62rem;
   }
 }
 
@@ -464,5 +547,17 @@ button:disabled {
 
   .calendar-birthdays-list {
     font-size: 0.95rem;
+  }
+
+  .leaderboard-podium-top,
+  .leaderboard-podium-rest {
+    grid-template-columns: 1fr;
+    gap: 0.52rem;
+  }
+
+  .podium-rank-1,
+  .podium-rank-2,
+  .podium-rank-3 {
+    min-height: auto;
   }
 }
