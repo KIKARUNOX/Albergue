@@ -70,8 +70,8 @@ export default function ImportarJovenesSection() {
     setLoading(true);
     setResultado("");
 
-    try {
-      const data = await file.arrayBuffer();
+    await Promise.resolve(file.arrayBuffer())
+      .then(async (data) => {
       const wb = XLSX.read(data);
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json<ExcelRow>(ws, { defval: "" });
@@ -117,10 +117,11 @@ export default function ImportarJovenesSection() {
       }
 
       setResultado(`Importacion completada. Correctos: ${ok}, Fallidos: ${fail}`);
-    } catch (err) {
-      console.error(err);
-      setResultado("Error leyendo el archivo Excel.");
-    }
+      })
+      .catch((err: unknown) => {
+        console.error(err);
+        setResultado("Error leyendo el archivo Excel.");
+      });
 
     setLoading(false);
     e.target.value = "";
