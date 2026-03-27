@@ -13,43 +13,57 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
   const [error, setError] = useState("");
 
   const cargar = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "personas"));
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaPuntaje));
-      data.sort((a, b) => (b.puntos ?? 0) - (a.puntos ?? 0));
-      setPersonas(data);
-      setError("");
-    } catch (err) {
-      console.error("Error al cargar leaderboard:", err);
-      setError("No tienes permisos para leer personas.");
-      setPersonas([]);
-    }
+    const snapshot = await getDocs(collection(db, "personas"));
+    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaPuntaje));
+    data.sort((a, b) => (b.puntos ?? 0) - (a.puntos ?? 0));
+    return data;
   };
 
   useEffect(() => {
-    void cargar();
+    let mounted = true;
+
+    void cargar()
+      .then((data) => {
+        if (!mounted) return;
+        setPersonas(data);
+        setError("");
+      })
+      .catch((err: unknown) => {
+        if (!mounted) return;
+        console.error("Error al cargar leaderboard:", err);
+        setError("No tienes permisos para leer personas.");
+        setPersonas([]);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const sumar = async (id: string, puntosActuales = 0) => {
-    try {
-      setError("");
-      await updateDoc(doc(db, "personas", id), { puntos: puntosActuales + 1 });
-      await cargar();
-    } catch (err) {
-      console.error("Error al sumar puntos:", err);
-      setError("No tienes permisos para actualizar puntos.");
-    }
+    setError("");
+    await updateDoc(doc(db, "personas", id), { puntos: puntosActuales + 1 })
+      .then(() => cargar())
+      .then((data) => {
+        setPersonas(data);
+      })
+      .catch((err: unknown) => {
+        console.error("Error al sumar puntos:", err);
+        setError("No tienes permisos para actualizar puntos.");
+      });
   };
 
   const restar = async (id: string, puntosActuales = 0) => {
-    try {
-      setError("");
-      await updateDoc(doc(db, "personas", id), { puntos: Math.max(0, puntosActuales - 1) });
-      await cargar();
-    } catch (err) {
-      console.error("Error al restar puntos:", err);
-      setError("No tienes permisos para actualizar puntos.");
-    }
+    setError("");
+    await updateDoc(doc(db, "personas", id), { puntos: Math.max(0, puntosActuales - 1) })
+      .then(() => cargar())
+      .then((data) => {
+        setPersonas(data);
+      })
+      .catch((err: unknown) => {
+        console.error("Error al restar puntos:", err);
+        setError("No tienes permisos para actualizar puntos.");
+      });
   };
 
   const visibles = limit ? personas.slice(0, limit) : personas;

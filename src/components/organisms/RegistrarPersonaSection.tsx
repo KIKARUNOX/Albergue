@@ -43,8 +43,7 @@ export default function RegistrarPersonaSection() {
     setSaving(true);
     setMensaje("");
 
-    try {
-      await addDoc(collection(db, "personas"), {
+    await addDoc(collection(db, "personas"), {
         nombre: form.nombre.trim(),
         apellido1: form.apellido1.trim(),
         apellido2: form.apellido2.trim(),
@@ -55,14 +54,15 @@ export default function RegistrarPersonaSection() {
         bautizado: form.bautizado,
         puntos: 0,
         createdAt: serverTimestamp(),
+      })
+      .then(() => {
+        setForm(initialForm);
+        setMensaje("Persona registrada correctamente.");
+      })
+      .catch((error: unknown) => {
+        console.error("Error al registrar persona:", error);
+        setMensaje("No se pudo registrar la persona. Intenta de nuevo.");
       });
-
-      setForm(initialForm);
-      setMensaje("Persona registrada correctamente.");
-    } catch (error) {
-      console.error("Error al registrar persona:", error);
-      setMensaje("No se pudo registrar la persona. Intenta de nuevo.");
-    }
 
     setSaving(false);
   };

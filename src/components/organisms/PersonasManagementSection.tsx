@@ -25,7 +25,7 @@ export default function PersonasManagementSection() {
   const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
   const [query, setQuery] = useState("");
   const [mensaje, setMensaje] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<PersonaDetalle | null>(null);
@@ -33,25 +33,59 @@ export default function PersonasManagementSection() {
   const [createForm, setCreateForm] = useState<PersonaForm>(emptyForm);
   const [editForm, setEditForm] = useState<PersonaForm>(emptyForm);
 
-  const cargarPersonas = async () => {
-    setLoading(true);
-    try {
-      const snapshot = await getDocs(collection(db, "personas"));
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
-      data.sort((a, b) => `${a.nombre} ${a.apellido1 ?? ""}`.localeCompare(`${b.nombre} ${b.apellido1 ?? ""}`, "es"));
-      setPersonas(data);
-    } catch (error) {
-      console.error("Error al cargar personas:", error);
-      setMensaje("No se pudieron cargar las personas.");
-      setPersonas([]);
+  const cargarPersonas = async (withLoading = true) => {
+    if (withLoading) {
+      setLoading(true);
     }
 
-    setLoading(false);
+    const snapshot = await getDocs(collection(db, "personas"));
+    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
+    data.sort((a, b) => `${a.nombre} ${a.apellido1 ?? ""}`.localeCompare(`${b.nombre} ${b.apellido1 ?? ""}`, "es"));
+
+    if (withLoading) {
+      setLoading(false);
+    }
+
+    return data;
   };
 
   useEffect(() => {
-    void cargarPersonas();
+    let mounted = true;
+
+    void cargarPersonas(false)
+      .then((data) => {
+        if (!mounted) return;
+        setPersonas(data);
+        setLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        console.error("Error al cargar personas:", error);
+        setMensaje("No se pudieron cargar las personas.");
+        setPersonas([]);
+        setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  const recargarPersonas = async () => {
+    setLoading(true);
+
+    await cargarPersonas(false)
+      .then((data) => {
+        setPersonas(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Error al cargar personas:", error);
+        setMensaje("No se pudieron cargar las personas.");
+        setPersonas([]);
+      });
+
+    setLoading(false);
+  };
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -96,8 +130,7 @@ export default function PersonasManagementSection() {
     setSaving(true);
     setMensaje("");
 
-    try {
-      await addDoc(collection(db, "personas"), {
+    await addDoc(collection(db, "personas"), {
         nombre: createForm.nombre.trim(),
         apellido1: createForm.apellido1?.trim() ?? "",
         apellido2: createForm.apellido2?.trim() ?? "",
@@ -108,16 +141,17 @@ export default function PersonasManagementSection() {
         bautizado: Boolean(createForm.bautizado),
         puntos: Number(createForm.puntos ?? 0),
         createdAt: serverTimestamp(),
+      })
+      .then(() => {
+        setCreateForm(emptyForm);
+        setShowCreateModal(false);
+        setMensaje("Persona registrada correctamente.");
+      })
+      .then(() => recargarPersonas())
+      .catch((error: unknown) => {
+        console.error("Error al crear persona:", error);
+        setMensaje("No se pudo crear la persona.");
       });
-
-      setCreateForm(emptyForm);
-      setShowCreateModal(false);
-      setMensaje("Persona registrada correctamente.");
-      await cargarPersonas();
-    } catch (error) {
-      console.error("Error al crear persona:", error);
-      setMensaje("No se pudo crear la persona.");
-    }
 
     setSaving(false);
   };
@@ -131,8 +165,7 @@ export default function PersonasManagementSection() {
     setSaving(true);
     setMensaje("");
 
-    try {
-      await updateDoc(doc(db, "personas", id), {
+    await updateDoc(doc(db, "personas", id), {
         nombre: editForm.nombre.trim(),
         apellido1: editForm.apellido1?.trim() ?? "",
         apellido2: editForm.apellido2?.trim() ?? "",
@@ -142,16 +175,17 @@ export default function PersonasManagementSection() {
         fechaNacimiento: editForm.fechaNacimiento ?? "",
         bautizado: Boolean(editForm.bautizado),
         puntos: Number(editForm.puntos ?? 0),
+      })
+      .then(() => {
+        setMensaje("Persona actualizada correctamente.");
+        setEditingId("");
+        setSelectedPersona(null);
+      })
+      .then(() => recargarPersonas())
+      .catch((error: unknown) => {
+        console.error("Error al guardar persona:", error);
+        setMensaje("No se pudo actualizar la persona.");
       });
-
-      setMensaje("Persona actualizada correctamente.");
-      setEditingId("");
-      setSelectedPersona(null);
-      await cargarPersonas();
-    } catch (error) {
-      console.error("Error al guardar persona:", error);
-      setMensaje("No se pudo actualizar la persona.");
-    }
 
     setSaving(false);
   };

@@ -95,24 +95,25 @@ export default function ImportarJovenesSection() {
         const localidad = toText(findValue(r, ["localidad", "barrio", "distrito"]));
         const bautizadoRaw = findValue(r, ["bautizado", "bautizada"]);
 
-        try {
-          await addDoc(collection(db, "personas"), {
-            nombre,
-            apellido1,
-            apellido2,
-            email: toText(findValue(r, ["email", "correo", "correo electronico", "correo electrónico"])),
-            telefono,
-            localidad,
-            fechaNacimiento,
-            edad: toNumber(edadRaw, 0),
-            bautizado: toBool(bautizadoRaw),
-            puntos: toNumber(findValue(r, ["puntos", "puntaje"]), 0),
-            createdAt: serverTimestamp(),
+        await addDoc(collection(db, "personas"), {
+          nombre,
+          apellido1,
+          apellido2,
+          email: toText(findValue(r, ["email", "correo", "correo electronico", "correo electrónico"])),
+          telefono,
+          localidad,
+          fechaNacimiento,
+          edad: toNumber(edadRaw, 0),
+          bautizado: toBool(bautizadoRaw),
+          puntos: toNumber(findValue(r, ["puntos", "puntaje"]), 0),
+          createdAt: serverTimestamp(),
+        })
+          .then(() => {
+            ok++;
+          })
+          .catch(() => {
+            fail++;
           });
-          ok++;
-        } catch {
-          fail++;
-        }
       }
 
       setResultado(`Importacion completada. Correctos: ${ok}, Fallidos: ${fail}`);

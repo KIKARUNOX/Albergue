@@ -25,34 +25,67 @@ export default function EditarPersonasSection() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [form, setForm] = useState<PersonaForm>(emptyForm);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
-  const cargar = async () => {
-    setLoading(true);
-    setMensaje("");
-
-    try {
-      const snapshot = await getDocs(collection(db, "personas"));
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
-      data.sort((a, b) => {
-        const na = `${a.nombre} ${a.apellido1 ?? ""} ${a.apellido2 ?? ""}`.toLowerCase();
-        const nb = `${b.nombre} ${b.apellido1 ?? ""} ${b.apellido2 ?? ""}`.toLowerCase();
-        return na.localeCompare(nb);
-      });
-      setPersonas(data);
-    } catch (error) {
-      console.error("Error al cargar personas:", error);
-      setMensaje("No se pudieron cargar las personas. Revisa permisos de Firestore.");
+  const cargar = async (withLoading = true) => {
+    if (withLoading) {
+      setLoading(true);
+      setMensaje("");
     }
 
-    setLoading(false);
+    const snapshot = await getDocs(collection(db, "personas"));
+    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
+    data.sort((a, b) => {
+      const na = `${a.nombre} ${a.apellido1 ?? ""} ${a.apellido2 ?? ""}`.toLowerCase();
+      const nb = `${b.nombre} ${b.apellido1 ?? ""} ${b.apellido2 ?? ""}`.toLowerCase();
+      return na.localeCompare(nb);
+    });
+
+    if (withLoading) {
+      setLoading(false);
+    }
+
+    return data;
   };
 
   useEffect(() => {
-    void cargar();
+    let mounted = true;
+
+    void cargar(false)
+      .then((data) => {
+        if (!mounted) return;
+        setPersonas(data);
+        setLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        console.error("Error al cargar personas:", error);
+        setMensaje("No se pudieron cargar las personas. Revisa permisos de Firestore.");
+        setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
+
+  const cargarConManejo = async () => {
+    setLoading(true);
+    setMensaje("");
+
+    await cargar(false)
+      .then((data) => {
+        setPersonas(data);
+      })
+      .catch((error: unknown) => {
+        console.error("Error al cargar personas:", error);
+        setMensaje("No se pudieron cargar las personas. Revisa permisos de Firestore.");
+      });
+
+    setLoading(false);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -101,8 +134,7 @@ export default function EditarPersonasSection() {
     setSaving(true);
     setMensaje("");
 
-    try {
-      await updateDoc(doc(db, "personas", selectedId), {
+    await updateDoc(doc(db, "personas", selectedId), {
         nombre: form.nombre.trim(),
         apellido1: form.apellido1?.trim() ?? "",
         apellido2: form.apellido2?.trim() ?? "",
@@ -112,14 +144,15 @@ export default function EditarPersonasSection() {
         fechaNacimiento: form.fechaNacimiento ?? "",
         bautizado: Boolean(form.bautizado),
         puntos: Number(form.puntos ?? 0),
+      })
+      .then(() => {
+        setMensaje("Persona actualizada correctamente.");
+      })
+      .then(() => cargarConManejo())
+      .catch((error: unknown) => {
+        console.error("Error al actualizar persona:", error);
+        setMensaje("No se pudo guardar. Revisa permisos de Firestore.");
       });
-
-      setMensaje("Persona actualizada correctamente.");
-      await cargar();
-    } catch (error) {
-      console.error("Error al actualizar persona:", error);
-      setMensaje("No se pudo guardar. Revisa permisos de Firestore.");
-    }
 
     setSaving(false);
   };
