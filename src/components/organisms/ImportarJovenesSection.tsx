@@ -6,6 +6,8 @@ import type { ExcelRow } from "../../type/componentProps";
 import PageSection from "../templates/PageSection";
 
 export default function ImportarJovenesSection() {
+  "use no memo";
+
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState("");
 

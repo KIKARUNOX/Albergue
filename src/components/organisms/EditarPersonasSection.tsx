@@ -19,6 +19,8 @@ const emptyForm: PersonaForm = {
 };
 
 export default function EditarPersonasSection() {
+  "use no memo";
+
   const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");

@@ -7,6 +7,8 @@ import Button from "../atoms/Button";
 import PageSection from "../templates/PageSection";
 
 export default function LeaderboardSection({ limit, showControls = true }: LeaderboardSectionProps) {
+  "use no memo";
+
   const [personas, setPersonas] = useState<PersonaPuntaje[]>([]);
   const [error, setError] = useState("");
 

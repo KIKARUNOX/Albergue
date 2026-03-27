@@ -20,6 +20,8 @@ const emptyForm: PersonaForm = {
 };
 
 export default function PersonasManagementSection() {
+  "use no memo";
+
   const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
   const [query, setQuery] = useState("");
   const [mensaje, setMensaje] = useState("");

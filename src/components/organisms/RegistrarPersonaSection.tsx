@@ -19,6 +19,8 @@ const initialForm: RegistrarPersonaFormData = {
 };
 
 export default function RegistrarPersonaSection() {
+  "use no memo";
+
   const [form, setForm] = useState<RegistrarPersonaFormData>(initialForm);
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
