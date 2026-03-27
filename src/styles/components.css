@@ -235,6 +235,90 @@ button:disabled {
   gap: 0.15rem;
 }
 
+.calendar-picker-wrap {
+  width: 100%;
+}
+
+.birthday-rac-calendar {
+  width: min(100%, 42rem);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  padding: 1rem;
+}
+
+.birthday-rac-calendar-head {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.6rem;
+}
+
+.birthday-rac-heading {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  font-weight: 800;
+  text-transform: lowercase;
+}
+
+.birthday-rac-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0.38rem;
+}
+
+.birthday-rac-weekday {
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: lowercase;
+  padding-bottom: 0.25rem;
+}
+
+.birthday-rac-cell {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-size: 1.08rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.birthday-rac-cell.is-selected {
+  background: var(--brand);
+  color: #fff;
+}
+
+.birthday-rac-cell.is-today {
+  border-color: var(--brand);
+}
+
+.birthday-rac-cell.has-birthday {
+  background: rgba(31, 143, 95, 0.12);
+  border-color: rgba(31, 143, 95, 0.45);
+}
+
+.birthday-rac-cell.is-outside {
+  opacity: 0.45;
+}
+
+.calendar-all-birthdays {
+  margin-top: 0.6rem;
+}
+
+.calendar-all-birthdays h4 {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.15rem, 2vw, 1.35rem);
+}
+
+.calendar-birthdays-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 1.04rem;
+}
+
 @media (max-width: 1024px) {
   .checkbox-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -253,6 +337,12 @@ button:disabled {
 
   .calendar-day {
     min-height: 84px;
+  }
+
+  .birthday-rac-cell {
+    width: 2.95rem;
+    height: 2.95rem;
+    font-size: 1rem;
   }
 }
 
@@ -350,5 +440,29 @@ button:disabled {
   .calendar-birthdays {
     font-size: 0.72rem;
     padding-left: 0.75rem;
+  }
+
+  .birthday-rac-calendar {
+    width: 100%;
+    padding: 0.65rem;
+  }
+
+  .birthday-rac-grid {
+    border-spacing: 0.2rem;
+  }
+
+  .birthday-rac-weekday {
+    font-size: 0.85rem;
+  }
+
+  .birthday-rac-cell {
+    width: 2.35rem;
+    height: 2.35rem;
+    font-size: 0.9rem;
+    border-radius: 8px;
+  }
+
+  .calendar-birthdays-list {
+    font-size: 0.95rem;
   }
 }

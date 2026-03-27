@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
+import { CalendarDate, getLocalTimeZone, today } from "@internationalized/date";
+import {
+  Calendar,
+  CalendarCell,
+  CalendarGrid,
+  CalendarGridBody,
+  CalendarGridHeader,
+  CalendarHeaderCell,
+  Heading,
+  I18nProvider,
+  Text,
+} from "react-aria-components";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 import type { CalendarSectionProps } from "../../type/componentProps";
 import type { PersonaCumple } from "../../type/persona";
-import Button from "../atoms/Button";
 import PageSection from "../templates/PageSection";
 
 const monthNames = [
@@ -20,8 +31,6 @@ const monthNames = [
   "Noviembre",
   "Diciembre",
 ];
-
-const weekDays = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
 
 const getMonthDayFromDateString = (value?: string) => {
   if (!value) return null;
@@ -60,9 +69,9 @@ const getMonthDayFromDateString = (value?: string) => {
 export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSectionProps) {
   const [cumples, setCumples] = useState<PersonaCumple[]>([]);
   const [error, setError] = useState("");
-  const now = new Date();
-  const [monthIndex, setMonthIndex] = useState(now.getMonth());
-  const [year, setYear] = useState(now.getFullYear());
+  const todayDate = today(getLocalTimeZone());
+  const [selectedDate, setSelectedDate] = useState<CalendarDate>(todayDate);
+  const [visibleMonth, setVisibleMonth] = useState<CalendarDate>(todayDate);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,108 +90,111 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
     void fetchData();
   }, []);
 
-  useEffect(() => {
-    if (!onlyCurrentMonth) return;
-    const current = new Date();
-    setMonthIndex(current.getMonth());
-    setYear(current.getFullYear());
-  }, [onlyCurrentMonth]);
-
-  const birthdaysByDay = useMemo(() => {
-    const map = new Map<number, PersonaCumple[]>();
-    const targetMonth = monthIndex + 1;
+  const birthdaysByMonthDay = useMemo(() => {
+    const map = new Map<string, PersonaCumple[]>();
 
     for (const p of cumples) {
       const parts = getMonthDayFromDateString(p.fechaNacimiento);
-      if (!parts || parts.month !== targetMonth) continue;
+      if (!parts) continue;
 
-      const dayList = map.get(parts.day) ?? [];
+      const key = `${parts.month}-${parts.day}`;
+      const dayList = map.get(key) ?? [];
       dayList.push(p);
-      map.set(parts.day, dayList);
+      map.set(key, dayList);
     }
 
     return map;
-  }, [cumples, monthIndex]);
+  }, [cumples]);
 
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-  const firstDay = new Date(year, monthIndex, 1).getDay();
-  const mondayFirstOffset = (firstDay + 6) % 7;
-  const calendarCells = [...Array(mondayFirstOffset).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+  const monthBirthdays = useMemo(() => {
+    const targetMonth = visibleMonth.month;
+    const rows: Array<{ sortDay: number; label: string; personName: string }> = [];
 
-  while (calendarCells.length % 7 !== 0) {
-    calendarCells.push(null);
-  }
+    for (const [key, people] of birthdaysByMonthDay) {
+      const [month, day] = key.split("-").map(Number);
+      if (month !== targetMonth || Number.isNaN(day)) continue;
 
-  const goPrevMonth = () => {
-    if (onlyCurrentMonth) return;
-    if (monthIndex === 0) {
-      setMonthIndex(11);
-      setYear((prev) => prev - 1);
-      return;
+      for (const person of people) {
+        rows.push({
+          sortDay: day,
+          label: `${day.toString().padStart(2, "0")} de ${monthNames[month - 1]}`,
+          personName: `${person.nombre} ${person.apellido1 ?? ""}`.trim(),
+        });
+      }
     }
-    setMonthIndex((prev) => prev - 1);
-  };
 
-  const goNextMonth = () => {
-    if (onlyCurrentMonth) return;
-    if (monthIndex === 11) {
-      setMonthIndex(0);
-      setYear((prev) => prev + 1);
-      return;
-    }
-    setMonthIndex((prev) => prev + 1);
-  };
+    return rows.sort((a, b) => {
+      if (a.sortDay !== b.sortDay) return a.sortDay - b.sortDay;
+      return a.personName.localeCompare(b.personName, "es");
+    });
+  }, [birthdaysByMonthDay, visibleMonth.month]);
+
+  const minValue = onlyCurrentMonth
+    ? new CalendarDate(todayDate.year, todayDate.month, 1)
+    : undefined;
+  const maxValue = onlyCurrentMonth
+    ? new CalendarDate(todayDate.year, todayDate.month, new Date(todayDate.year, todayDate.month, 0).getDate())
+    : undefined;
 
   return (
     <PageSection title={onlyCurrentMonth ? "Cumpleaños del mes" : "Cumpleaños"}>
       {error ? <p className="form-message error">{error}</p> : null}
 
-      <div className="calendar-head">
-        {!onlyCurrentMonth ? (
-          <Button variant="secondary" onClick={goPrevMonth}>
-            Mes anterior
-          </Button>
-        ) : null}
-        <h3>{monthNames[monthIndex]} {year}</h3>
-        {!onlyCurrentMonth ? (
-          <Button variant="secondary" onClick={goNextMonth}>
-            Mes siguiente
-          </Button>
-        ) : null}
+      <div className="calendar-picker-wrap">
+        <I18nProvider locale="es-ES">
+          <Calendar
+            aria-label="Calendario de cumpleaños"
+            value={selectedDate}
+            onChange={(date) => {
+              setSelectedDate(date);
+              setVisibleMonth(date);
+            }}
+            onFocusChange={(date) => setVisibleMonth(date)}
+            minValue={minValue}
+            maxValue={maxValue}
+            className="birthday-rac-calendar"
+          >
+            <div className="birthday-rac-calendar-head">
+              <Heading className="birthday-rac-heading" />
+            </div>
+
+            <CalendarGrid className="birthday-rac-grid" weekdayStyle="short">
+              <CalendarGridHeader>
+                {(day) => <CalendarHeaderCell className="birthday-rac-weekday">{day}</CalendarHeaderCell>}
+              </CalendarGridHeader>
+              <CalendarGridBody>
+                {(date) => {
+                  const hasBirthday = (birthdaysByMonthDay.get(`${date.month}-${date.day}`)?.length ?? 0) > 0;
+                  return (
+                    <CalendarCell
+                      date={date}
+                      className={({ isSelected, isToday, isOutsideMonth }) =>
+                        `birthday-rac-cell${hasBirthday ? " has-birthday" : ""}${isSelected ? " is-selected" : ""}${isToday ? " is-today" : ""}${isOutsideMonth ? " is-outside" : ""}`
+                      }
+                    />
+                  );
+                }}
+              </CalendarGridBody>
+            </CalendarGrid>
+            <Text slot="errorMessage" className="small-text" />
+          </Calendar>
+        </I18nProvider>
       </div>
 
-      <div className="calendar-scroll">
-        <div className="birthday-calendar">
-          {weekDays.map((day) => (
-            <div key={day} className="calendar-weekday">
-              {day}
-            </div>
-          ))}
+      <div className="calendar-all-birthdays">
+        <h4>{`Cumpleaños de ${monthNames[visibleMonth.month - 1]} ${visibleMonth.year}`}</h4>
 
-          {calendarCells.map((day, index) => {
-            if (!day) {
-              return <div key={`empty-${index}`} className="calendar-day is-empty" />;
-            }
-
-            const birthdays = birthdaysByDay.get(day) ?? [];
-            const isBirthday = birthdays.length > 0;
-            const isToday =
-              day === now.getDate() && monthIndex === now.getMonth() && year === now.getFullYear();
-
-            return (
-              <div key={`day-${day}-${index}`} className={`calendar-day${isBirthday ? " has-birthday" : ""}${isToday ? " is-today" : ""}`}>
-                <div className="calendar-day-number">{day}</div>
-                {isBirthday ? (
-                  <ul className="calendar-birthdays">
-                    {birthdays.map((p, i) => (
-                      <li key={`${p.nombre}-${i}`}>{`${p.nombre} ${p.apellido1 ?? ""}`.trim()}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
+        {monthBirthdays.length > 0 ? (
+          <ul className="calendar-birthdays-list">
+            {monthBirthdays.map((item, index) => (
+              <li key={`${item.label}-${item.personName}-${index}`}>
+                <strong>{item.label}:</strong> {item.personName}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="small-text">No hay cumpleaños registrados para este mes.</p>
+        )}
       </div>
     </PageSection>
   );
