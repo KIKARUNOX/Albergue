@@ -29,12 +29,7 @@ export default function EditarPersonasSection() {
   const [saving, setSaving] = useState(false);
   const [mensaje, setMensaje] = useState("");
 
-  const cargar = async (withLoading = true) => {
-    if (withLoading) {
-      setLoading(true);
-      setMensaje("");
-    }
-
+  const fetchPersonas = async () => {
     const snapshot = await getDocs(collection(db, "personas"));
     const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
     data.sort((a, b) => {
@@ -43,17 +38,13 @@ export default function EditarPersonasSection() {
       return na.localeCompare(nb);
     });
 
-    if (withLoading) {
-      setLoading(false);
-    }
-
     return data;
   };
 
   useEffect(() => {
     let mounted = true;
 
-    void cargar(false)
+    void fetchPersonas()
       .then((data) => {
         if (!mounted) return;
         setPersonas(data);
@@ -75,7 +66,7 @@ export default function EditarPersonasSection() {
     setLoading(true);
     setMensaje("");
 
-    await cargar(false)
+    await fetchPersonas()
       .then((data) => {
         setPersonas(data);
       })

@@ -85,7 +85,7 @@ export default function ImportarJovenesSection() {
         const apellido2 = toText(findValue(r, ["segundo apellido", "apellido2", "apellido 2", "segundo_apellido"]));
 
         if (!nombre) {
-          fail++;
+          fail += 1;
           continue;
         }
 
@@ -109,10 +109,10 @@ export default function ImportarJovenesSection() {
           createdAt: serverTimestamp(),
         })
           .then(() => {
-            ok++;
+            ok += 1;
           })
           .catch(() => {
-            fail++;
+            fail += 1;
           });
       }
 

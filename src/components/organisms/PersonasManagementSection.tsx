@@ -33,18 +33,10 @@ export default function PersonasManagementSection() {
   const [createForm, setCreateForm] = useState<PersonaForm>(emptyForm);
   const [editForm, setEditForm] = useState<PersonaForm>(emptyForm);
 
-  const cargarPersonas = async (withLoading = true) => {
-    if (withLoading) {
-      setLoading(true);
-    }
-
+  const fetchPersonas = async () => {
     const snapshot = await getDocs(collection(db, "personas"));
     const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
     data.sort((a, b) => `${a.nombre} ${a.apellido1 ?? ""}`.localeCompare(`${b.nombre} ${b.apellido1 ?? ""}`, "es"));
-
-    if (withLoading) {
-      setLoading(false);
-    }
 
     return data;
   };
@@ -52,7 +44,7 @@ export default function PersonasManagementSection() {
   useEffect(() => {
     let mounted = true;
 
-    void cargarPersonas(false)
+    void fetchPersonas()
       .then((data) => {
         if (!mounted) return;
         setPersonas(data);
@@ -74,7 +66,7 @@ export default function PersonasManagementSection() {
   const recargarPersonas = async () => {
     setLoading(true);
 
-    await cargarPersonas(false)
+    await fetchPersonas()
       .then((data) => {
         setPersonas(data);
       })
