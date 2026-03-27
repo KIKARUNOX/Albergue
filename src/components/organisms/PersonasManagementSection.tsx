@@ -42,9 +42,9 @@ export default function PersonasManagementSection() {
       console.error("Error al cargar personas:", error);
       setMensaje("No se pudieron cargar las personas.");
       setPersonas([]);
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -115,9 +115,9 @@ export default function PersonasManagementSection() {
     } catch (error) {
       console.error("Error al crear persona:", error);
       setMensaje("No se pudo crear la persona.");
-    } finally {
-      setSaving(false);
     }
+
+    setSaving(false);
   };
 
   const guardarEdicion = async (id: string) => {
@@ -149,9 +149,9 @@ export default function PersonasManagementSection() {
     } catch (error) {
       console.error("Error al guardar persona:", error);
       setMensaje("No se pudo actualizar la persona.");
-    } finally {
-      setSaving(false);
     }
+
+    setSaving(false);
   };
 
   return (

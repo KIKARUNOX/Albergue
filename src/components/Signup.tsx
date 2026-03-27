@@ -43,9 +43,9 @@ export default function Signup() {
       } else {
         setError("Error al registrarse");
       }
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (

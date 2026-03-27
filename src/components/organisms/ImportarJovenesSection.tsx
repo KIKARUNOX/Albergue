@@ -117,10 +117,10 @@ export default function ImportarJovenesSection() {
     } catch (err) {
       console.error(err);
       setResultado("Error leyendo el archivo Excel.");
-    } finally {
-      setLoading(false);
-      e.target.value = "";
     }
+
+    setLoading(false);
+    e.target.value = "";
   };
 
   return (

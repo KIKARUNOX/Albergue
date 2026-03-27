@@ -60,9 +60,9 @@ export default function RegistrarPersonaSection() {
     } catch (error) {
       console.error("Error al registrar persona:", error);
       setMensaje("No se pudo registrar la persona. Intenta de nuevo.");
-    } finally {
-      setSaving(false);
     }
+
+    setSaving(false);
   };
 
   return (

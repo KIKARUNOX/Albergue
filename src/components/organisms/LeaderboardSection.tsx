@@ -12,11 +12,11 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
 
   const cargar = async () => {
     try {
-      setError("");
       const snapshot = await getDocs(collection(db, "personas"));
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaPuntaje));
       data.sort((a, b) => (b.puntos ?? 0) - (a.puntos ?? 0));
       setPersonas(data);
+      setError("");
     } catch (err) {
       console.error("Error al cargar leaderboard:", err);
       setError("No tienes permisos para leer personas.");

@@ -43,9 +43,9 @@ export default function EditarPersonasSection() {
     } catch (error) {
       console.error("Error al cargar personas:", error);
       setMensaje("No se pudieron cargar las personas. Revisa permisos de Firestore.");
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -117,9 +117,9 @@ export default function EditarPersonasSection() {
     } catch (error) {
       console.error("Error al actualizar persona:", error);
       setMensaje("No se pudo guardar. Revisa permisos de Firestore.");
-    } finally {
-      setSaving(false);
     }
+
+    setSaving(false);
   };
 
   return (

@@ -24,9 +24,9 @@ export default function Login() {
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : "Error al iniciar sesión";
       setError(errorMessage);
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
