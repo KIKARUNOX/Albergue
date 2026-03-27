@@ -67,8 +67,10 @@ const getMonthDayFromDateString = (value?: string) => {
 };
 
 export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSectionProps) {
-  const [cumples, setCumples] = useState<PersonaCumple[]>([]);
-  const [error, setError] = useState("");
+  const [calendarData, setCalendarData] = useState<{ cumples: PersonaCumple[]; error: string }>({
+    cumples: [],
+    error: "",
+  });
   const todayDate = today(getLocalTimeZone());
   const [selectedDate, setSelectedDate] = useState<CalendarDate>(todayDate);
   const [visibleMonth, setVisibleMonth] = useState<CalendarDate>(todayDate);
@@ -76,15 +78,13 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setError("");
         const snapshot = await getDocs(collection(db, "personas"));
         const data = snapshot.docs.map((doc) => doc.data() as PersonaCumple);
         const withBirthday = data.filter((p) => p.fechaNacimiento);
-        setCumples(withBirthday);
+        setCalendarData({ cumples: withBirthday, error: "" });
       } catch (err) {
         console.error("Error al cargar cumpleanos:", err);
-        setError("No tienes permisos para ver cumpleanos.");
-        setCumples([]);
+        setCalendarData({ cumples: [], error: "No tienes permisos para ver cumpleanos." });
       }
     };
     void fetchData();
@@ -93,7 +93,7 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
   const birthdaysByMonthDay = useMemo(() => {
     const map = new Map<string, PersonaCumple[]>();
 
-    for (const p of cumples) {
+    for (const p of calendarData.cumples) {
       const parts = getMonthDayFromDateString(p.fechaNacimiento);
       if (!parts) continue;
 
@@ -104,7 +104,7 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
     }
 
     return map;
-  }, [cumples]);
+  }, [calendarData.cumples]);
 
   const monthBirthdays = useMemo(() => {
     const targetMonth = visibleMonth.month;
@@ -138,7 +138,7 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
 
   return (
     <PageSection title={onlyCurrentMonth ? "Cumpleaños del mes" : "Cumpleaños"}>
-      {error ? <p className="form-message error">{error}</p> : null}
+      {calendarData.error ? <p className="form-message error">{calendarData.error}</p> : null}
 
       <div className="calendar-picker-wrap">
         <I18nProvider locale="es-ES">
@@ -186,8 +186,8 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
 
         {monthBirthdays.length > 0 ? (
           <ul className="calendar-birthdays-list">
-            {monthBirthdays.map((item, index) => (
-              <li key={`${item.label}-${item.personName}-${index}`}>
+            {monthBirthdays.map((item) => (
+              <li key={`${item.label}-${item.personName}`}>
                 <strong>{item.label}:</strong> {item.personName}
               </li>
             ))}

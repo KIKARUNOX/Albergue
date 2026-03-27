@@ -6,11 +6,19 @@ import type { PersonaPuntaje } from "../../type/persona";
 import Button from "../atoms/Button";
 import PageSection from "../templates/PageSection";
 
+type LeaderboardDataState = {
+  personas: PersonaPuntaje[];
+  error: string;
+};
+
+function PersonaLabel({ persona }: { persona: PersonaPuntaje }) {
+  return <>{`${persona.nombre} ${persona.apellido1 ?? ""} ${persona.apellido2 ?? ""}`.replace(/\s+/g, " ").trim()}</>;
+}
+
 export default function LeaderboardSection({ limit, showControls = true }: LeaderboardSectionProps) {
   "use no memo";
 
-  const [personas, setPersonas] = useState<PersonaPuntaje[]>([]);
-  const [error, setError] = useState("");
+  const [leaderboardData, setLeaderboardData] = useState<LeaderboardDataState>({ personas: [], error: "" });
 
   const cargar = async () => {
     const snapshot = await getDocs(collection(db, "personas"));
@@ -25,14 +33,12 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
     void cargar()
       .then((data) => {
         if (!mounted) return;
-        setPersonas(data);
-        setError("");
+        setLeaderboardData({ personas: data, error: "" });
       })
       .catch((err: unknown) => {
         if (!mounted) return;
         console.error("Error al cargar leaderboard:", err);
-        setError("No tienes permisos para leer personas.");
-        setPersonas([]);
+        setLeaderboardData({ personas: [], error: "No tienes permisos para leer personas." });
       });
 
     return () => {
@@ -41,36 +47,33 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
   }, []);
 
   const sumar = async (id: string, puntosActuales = 0) => {
-    setError("");
+    setLeaderboardData((prev) => ({ ...prev, error: "" }));
     await updateDoc(doc(db, "personas", id), { puntos: puntosActuales + 1 })
       .then(() => cargar())
       .then((data) => {
-        setPersonas(data);
+        setLeaderboardData({ personas: data, error: "" });
       })
       .catch((err: unknown) => {
         console.error("Error al sumar puntos:", err);
-        setError("No tienes permisos para actualizar puntos.");
+        setLeaderboardData((prev) => ({ ...prev, error: "No tienes permisos para actualizar puntos." }));
       });
   };
 
   const restar = async (id: string, puntosActuales = 0) => {
-    setError("");
+    setLeaderboardData((prev) => ({ ...prev, error: "" }));
     await updateDoc(doc(db, "personas", id), { puntos: Math.max(0, puntosActuales - 1) })
       .then(() => cargar())
       .then((data) => {
-        setPersonas(data);
+        setLeaderboardData({ personas: data, error: "" });
       })
       .catch((err: unknown) => {
         console.error("Error al restar puntos:", err);
-        setError("No tienes permisos para actualizar puntos.");
+        setLeaderboardData((prev) => ({ ...prev, error: "No tienes permisos para actualizar puntos." }));
       });
   };
 
-  const visibles = limit ? personas.slice(0, limit) : personas;
+  const visibles = limit ? leaderboardData.personas.slice(0, limit) : leaderboardData.personas;
   const shouldRenderPodium = !showControls && limit === 5;
-
-  const renderPersonaLabel = (p: PersonaPuntaje) =>
-    `${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.replace(/\s+/g, " ").trim();
 
   const podiumLeaders = shouldRenderPodium
     ? [
@@ -89,7 +92,7 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
 
   return (
     <PageSection title={limit ? `Top ${limit} personas` : "Leaderboard"}>
-      {error ? <p className="form-message error">{error}</p> : null}
+      {leaderboardData.error ? <p className="form-message error">{leaderboardData.error}</p> : null}
       {visibles.length === 0 ? (
         <ul className="compact-list">
           <li>No hay personas registradas</li>
@@ -104,7 +107,7 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
                   className={`podium-card podium-rank-${rank}${rank === 1 ? " is-winner" : ""}`}
                 >
                   <div className="podium-rank-label">#{rank}</div>
-                  <strong className="podium-name">{renderPersonaLabel(persona)}</strong>
+                  <strong className="podium-name"><PersonaLabel persona={persona} /></strong>
                   <span className="podium-points">{persona.puntos ?? 0} puntos</span>
                 </article>
               ) : null,
@@ -116,7 +119,7 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
               persona ? (
                 <article key={persona.id} className={`podium-card podium-rank-${rank}`}>
                   <div className="podium-rank-label">#{rank}</div>
-                  <strong className="podium-name">{renderPersonaLabel(persona)}</strong>
+                  <strong className="podium-name"><PersonaLabel persona={persona} /></strong>
                   <span className="podium-points">{persona.puntos ?? 0} puntos</span>
                 </article>
               ) : null,
@@ -127,7 +130,7 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
         <ul className="compact-list">
           {visibles.map((p) => (
             <li key={p.id}>
-              {renderPersonaLabel(p)} - {p.puntos ?? 0} puntos
+              <PersonaLabel persona={p} /> - {p.puntos ?? 0} puntos
               {showControls ? (
                 <span className="inline-actions">
                   <Button onClick={() => void sumar(p.id, p.puntos ?? 0)}>+</Button>

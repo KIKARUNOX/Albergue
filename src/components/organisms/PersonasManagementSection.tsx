@@ -19,19 +19,39 @@ const emptyForm: PersonaForm = {
   puntos: 0,
 };
 
+type PersonasManagementUiState = {
+  query: string;
+  mensaje: string;
+  loading: boolean;
+  saving: boolean;
+  showCreateModal: boolean;
+  selectedPersona: PersonaDetalle | null;
+  editingId: string;
+  createForm: PersonaForm;
+  editForm: PersonaForm;
+};
+
+const initialUiState: PersonasManagementUiState = {
+  query: "",
+  mensaje: "",
+  loading: true,
+  saving: false,
+  showCreateModal: false,
+  selectedPersona: null,
+  editingId: "",
+  createForm: emptyForm,
+  editForm: emptyForm,
+};
+
 export default function PersonasManagementSection() {
   "use no memo";
 
   const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
-  const [query, setQuery] = useState("");
-  const [mensaje, setMensaje] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [selectedPersona, setSelectedPersona] = useState<PersonaDetalle | null>(null);
-  const [editingId, setEditingId] = useState("");
-  const [createForm, setCreateForm] = useState<PersonaForm>(emptyForm);
-  const [editForm, setEditForm] = useState<PersonaForm>(emptyForm);
+  const [ui, setUi] = useState<PersonasManagementUiState>(initialUiState);
+
+  const patchUi = (next: Partial<PersonasManagementUiState>) => {
+    setUi((prev) => ({ ...prev, ...next }));
+  };
 
   const fetchPersonas = async () => {
     const snapshot = await getDocs(collection(db, "personas"));
@@ -48,14 +68,13 @@ export default function PersonasManagementSection() {
       .then((data) => {
         if (!mounted) return;
         setPersonas(data);
-        setLoading(false);
+        patchUi({ loading: false });
       })
       .catch((error: unknown) => {
         if (!mounted) return;
         console.error("Error al cargar personas:", error);
-        setMensaje("No se pudieron cargar las personas.");
+        patchUi({ mensaje: "No se pudieron cargar las personas.", loading: false });
         setPersonas([]);
-        setLoading(false);
       });
 
     return () => {
@@ -64,7 +83,7 @@ export default function PersonasManagementSection() {
   }, []);
 
   const recargarPersonas = async () => {
-    setLoading(true);
+    patchUi({ loading: true });
 
     await fetchPersonas()
       .then((data) => {
@@ -72,128 +91,128 @@ export default function PersonasManagementSection() {
       })
       .catch((error: unknown) => {
         console.error("Error al cargar personas:", error);
-        setMensaje("No se pudieron cargar las personas.");
+        patchUi({ mensaje: "No se pudieron cargar las personas." });
         setPersonas([]);
       });
 
-    setLoading(false);
+    patchUi({ loading: false });
   };
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = ui.query.trim().toLowerCase();
     if (!normalized) return personas;
 
     return personas.filter((p) => {
       const fullName = `${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.toLowerCase();
       return fullName.includes(normalized);
     });
-  }, [personas, query]);
+  }, [personas, ui.query]);
 
   const createField = <K extends keyof PersonaForm>(key: K, value: PersonaForm[K]) => {
-    setCreateForm((prev) => ({ ...prev, [key]: value }));
+    setUi((prev) => ({ ...prev, createForm: { ...prev.createForm, [key]: value } }));
   };
 
   const editField = <K extends keyof PersonaForm>(key: K, value: PersonaForm[K]) => {
-    setEditForm((prev) => ({ ...prev, [key]: value }));
+    setUi((prev) => ({ ...prev, editForm: { ...prev.editForm, [key]: value } }));
   };
 
   const abrirEdicion = (persona: PersonaDetalle) => {
-    setSelectedPersona(persona);
-    setEditingId(persona.id);
-    setEditForm({
-      nombre: persona.nombre ?? "",
-      apellido1: persona.apellido1 ?? "",
-      apellido2: persona.apellido2 ?? "",
-      email: persona.email ?? "",
-      telefono: persona.telefono ?? "",
-      localidad: persona.localidad ?? "",
-      fechaNacimiento: persona.fechaNacimiento ?? "",
-      bautizado: Boolean(persona.bautizado),
-      puntos: Number(persona.puntos ?? 0),
+    patchUi({
+      selectedPersona: persona,
+      editingId: persona.id,
+      editForm: {
+        nombre: persona.nombre ?? "",
+        apellido1: persona.apellido1 ?? "",
+        apellido2: persona.apellido2 ?? "",
+        email: persona.email ?? "",
+        telefono: persona.telefono ?? "",
+        localidad: persona.localidad ?? "",
+        fechaNacimiento: persona.fechaNacimiento ?? "",
+        bautizado: Boolean(persona.bautizado),
+        puntos: Number(persona.puntos ?? 0),
+      },
     });
   };
 
   const guardarNuevaPersona = async () => {
-    if (!createForm.nombre.trim()) {
-      setMensaje("El nombre es obligatorio.");
+    if (!ui.createForm.nombre.trim()) {
+      patchUi({ mensaje: "El nombre es obligatorio." });
       return;
     }
 
-    setSaving(true);
-    setMensaje("");
+    patchUi({ saving: true, mensaje: "" });
 
     await addDoc(collection(db, "personas"), {
-        nombre: createForm.nombre.trim(),
-        apellido1: createForm.apellido1?.trim() ?? "",
-        apellido2: createForm.apellido2?.trim() ?? "",
-        email: createForm.email?.trim() ?? "",
-        telefono: createForm.telefono?.trim() ?? "",
-        localidad: createForm.localidad?.trim() ?? "",
-        fechaNacimiento: createForm.fechaNacimiento ?? "",
-        bautizado: Boolean(createForm.bautizado),
-        puntos: Number(createForm.puntos ?? 0),
+        nombre: ui.createForm.nombre.trim(),
+        apellido1: ui.createForm.apellido1?.trim() ?? "",
+        apellido2: ui.createForm.apellido2?.trim() ?? "",
+        email: ui.createForm.email?.trim() ?? "",
+        telefono: ui.createForm.telefono?.trim() ?? "",
+        localidad: ui.createForm.localidad?.trim() ?? "",
+        fechaNacimiento: ui.createForm.fechaNacimiento ?? "",
+        bautizado: Boolean(ui.createForm.bautizado),
+        puntos: Number(ui.createForm.puntos ?? 0),
         createdAt: serverTimestamp(),
       })
       .then(() => {
-        setCreateForm(emptyForm);
-        setShowCreateModal(false);
-        setMensaje("Persona registrada correctamente.");
+        patchUi({ createForm: emptyForm, showCreateModal: false, mensaje: "Persona registrada correctamente." });
       })
       .then(() => recargarPersonas())
       .catch((error: unknown) => {
         console.error("Error al crear persona:", error);
-        setMensaje("No se pudo crear la persona.");
+        patchUi({ mensaje: "No se pudo crear la persona." });
       });
 
-    setSaving(false);
+    patchUi({ saving: false });
   };
 
   const guardarEdicion = async (id: string) => {
-    if (!editForm.nombre.trim()) {
-      setMensaje("El nombre es obligatorio.");
+    if (!ui.editForm.nombre.trim()) {
+      patchUi({ mensaje: "El nombre es obligatorio." });
       return;
     }
 
-    setSaving(true);
-    setMensaje("");
+    patchUi({ saving: true, mensaje: "" });
 
     await updateDoc(doc(db, "personas", id), {
-        nombre: editForm.nombre.trim(),
-        apellido1: editForm.apellido1?.trim() ?? "",
-        apellido2: editForm.apellido2?.trim() ?? "",
-        email: editForm.email?.trim() ?? "",
-        telefono: editForm.telefono?.trim() ?? "",
-        localidad: editForm.localidad?.trim() ?? "",
-        fechaNacimiento: editForm.fechaNacimiento ?? "",
-        bautizado: Boolean(editForm.bautizado),
-        puntos: Number(editForm.puntos ?? 0),
+        nombre: ui.editForm.nombre.trim(),
+        apellido1: ui.editForm.apellido1?.trim() ?? "",
+        apellido2: ui.editForm.apellido2?.trim() ?? "",
+        email: ui.editForm.email?.trim() ?? "",
+        telefono: ui.editForm.telefono?.trim() ?? "",
+        localidad: ui.editForm.localidad?.trim() ?? "",
+        fechaNacimiento: ui.editForm.fechaNacimiento ?? "",
+        bautizado: Boolean(ui.editForm.bautizado),
+        puntos: Number(ui.editForm.puntos ?? 0),
       })
       .then(() => {
-        setMensaje("Persona actualizada correctamente.");
-        setEditingId("");
-        setSelectedPersona(null);
+        patchUi({ mensaje: "Persona actualizada correctamente.", editingId: "", selectedPersona: null });
       })
       .then(() => recargarPersonas())
       .catch((error: unknown) => {
         console.error("Error al guardar persona:", error);
-        setMensaje("No se pudo actualizar la persona.");
+        patchUi({ mensaje: "No se pudo actualizar la persona." });
       });
 
-    setSaving(false);
+    patchUi({ saving: false });
   };
 
   return (
     <PageSection title="Gestion de personas">
-      <StatusMessage message={mensaje} />
+      <StatusMessage message={ui.mensaje} />
 
       <div className="table-toolbar">
-        <input placeholder="Buscar por nombre..." value={query} onChange={(e) => setQuery(e.target.value)} />
-        <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
+        <input
+          placeholder="Buscar por nombre..."
+          value={ui.query}
+          onChange={(e) => patchUi({ query: e.target.value })}
+        />
+        <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
           Agregar persona
         </Button>
       </div>
 
-      {loading ? (
+      {ui.loading ? (
         <p>Cargando personas...</p>
       ) : (
         <div className="table-scroll">
@@ -214,7 +233,7 @@ export default function PersonasManagementSection() {
                   <td data-label="Puntos">{p.puntos ?? 0}</td>
                   <td data-label="Acciones">
                     <div className="table-actions">
-                      <Button variant="secondary" onClick={() => setSelectedPersona(p)}>
+                      <Button variant="secondary" onClick={() => patchUi({ selectedPersona: p })}>
                         Ver detalles
                       </Button>
                       <Button variant="secondary" onClick={() => abrirEdicion(p)}>
@@ -231,83 +250,81 @@ export default function PersonasManagementSection() {
 
       {/* Modal para crear persona */}
       <Modal
-        isOpen={showCreateModal}
+        isOpen={ui.showCreateModal}
         title="Agregar persona"
         onClose={() => {
-          setShowCreateModal(false);
-          setCreateForm(emptyForm);
+          patchUi({ showCreateModal: false, createForm: emptyForm });
         }}
       >
         <div className="stack-sm">
-          <input placeholder="Nombre *" value={createForm.nombre} onChange={(e) => createField("nombre", e.target.value)} />
-          <input placeholder="Primer apellido" value={createForm.apellido1} onChange={(e) => createField("apellido1", e.target.value)} />
-          <input placeholder="Segundo apellido" value={createForm.apellido2} onChange={(e) => createField("apellido2", e.target.value)} />
-          <input type="email" placeholder="Correo" value={createForm.email} onChange={(e) => createField("email", e.target.value)} />
-          <input placeholder="Telefono" value={createForm.telefono} onChange={(e) => createField("telefono", e.target.value)} />
-          <input placeholder="Localidad" value={createForm.localidad} onChange={(e) => createField("localidad", e.target.value)} />
+          <input placeholder="Nombre *" value={ui.createForm.nombre} onChange={(e) => createField("nombre", e.target.value)} />
+          <input placeholder="Primer apellido" value={ui.createForm.apellido1} onChange={(e) => createField("apellido1", e.target.value)} />
+          <input placeholder="Segundo apellido" value={ui.createForm.apellido2} onChange={(e) => createField("apellido2", e.target.value)} />
+          <input type="email" placeholder="Correo" value={ui.createForm.email} onChange={(e) => createField("email", e.target.value)} />
+          <input placeholder="Telefono" value={ui.createForm.telefono} onChange={(e) => createField("telefono", e.target.value)} />
+          <input placeholder="Localidad" value={ui.createForm.localidad} onChange={(e) => createField("localidad", e.target.value)} />
           <label>
             Fecha de nacimiento
-            <input type="date" value={createForm.fechaNacimiento} onChange={(e) => createField("fechaNacimiento", e.target.value)} />
+            <input type="date" value={ui.createForm.fechaNacimiento} onChange={(e) => createField("fechaNacimiento", e.target.value)} />
           </label>
           <label className="checkbox-item">
-            <input type="checkbox" checked={createForm.bautizado} onChange={(e) => createField("bautizado", e.target.checked)} />
+            <input type="checkbox" checked={ui.createForm.bautizado} onChange={(e) => createField("bautizado", e.target.checked)} />
             <span>Bautizado</span>
           </label>
-          <input type="number" placeholder="Puntos" value={createForm.puntos ?? 0} onChange={(e) => createField("puntos", Number(e.target.value) || 0)} />
-          <Button onClick={() => void guardarNuevaPersona()} disabled={saving}>
-            {saving ? "Guardando..." : "Guardar persona"}
+          <input type="number" placeholder="Puntos" value={ui.createForm.puntos ?? 0} onChange={(e) => createField("puntos", Number(e.target.value) || 0)} />
+          <Button onClick={() => void guardarNuevaPersona()} disabled={ui.saving}>
+            {ui.saving ? "Guardando..." : "Guardar persona"}
           </Button>
         </div>
       </Modal>
 
       {/* Modal para ver y editar detalles de persona */}
       <Modal
-        isOpen={selectedPersona !== null}
-        title={editingId === selectedPersona?.id ? "Editar persona" : "Detalle de persona"}
+        isOpen={ui.selectedPersona !== null}
+        title={ui.editingId === ui.selectedPersona?.id ? "Editar persona" : "Detalle de persona"}
         onClose={() => {
-          setSelectedPersona(null);
-          setEditingId("");
+          patchUi({ selectedPersona: null, editingId: "" });
         }}
       >
-        {selectedPersona && (
+        {ui.selectedPersona && (
           <div className="stack-sm">
-            {editingId === selectedPersona.id ? (
+            {ui.editingId === ui.selectedPersona.id ? (
               <>
-                <input placeholder="Nombre" value={editForm.nombre} onChange={(e) => editField("nombre", e.target.value)} />
-                <input placeholder="Primer apellido" value={editForm.apellido1} onChange={(e) => editField("apellido1", e.target.value)} />
-                <input placeholder="Segundo apellido" value={editForm.apellido2} onChange={(e) => editField("apellido2", e.target.value)} />
-                <input type="email" placeholder="Correo" value={editForm.email} onChange={(e) => editField("email", e.target.value)} />
-                <input placeholder="Telefono" value={editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
-                <input placeholder="Localidad" value={editForm.localidad} onChange={(e) => editField("localidad", e.target.value)} />
+                <input placeholder="Nombre" value={ui.editForm.nombre} onChange={(e) => editField("nombre", e.target.value)} />
+                <input placeholder="Primer apellido" value={ui.editForm.apellido1} onChange={(e) => editField("apellido1", e.target.value)} />
+                <input placeholder="Segundo apellido" value={ui.editForm.apellido2} onChange={(e) => editField("apellido2", e.target.value)} />
+                <input type="email" placeholder="Correo" value={ui.editForm.email} onChange={(e) => editField("email", e.target.value)} />
+                <input placeholder="Telefono" value={ui.editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
+                <input placeholder="Localidad" value={ui.editForm.localidad} onChange={(e) => editField("localidad", e.target.value)} />
                 <label>
                   Fecha de nacimiento
-                  <input type="date" value={editForm.fechaNacimiento} onChange={(e) => editField("fechaNacimiento", e.target.value)} />
+                  <input type="date" value={ui.editForm.fechaNacimiento} onChange={(e) => editField("fechaNacimiento", e.target.value)} />
                 </label>
                 <label className="checkbox-item">
-                  <input type="checkbox" checked={editForm.bautizado} onChange={(e) => editField("bautizado", e.target.checked)} />
+                  <input type="checkbox" checked={ui.editForm.bautizado} onChange={(e) => editField("bautizado", e.target.checked)} />
                   <span>Bautizado</span>
                 </label>
-                <input type="number" placeholder="Puntos" value={editForm.puntos ?? 0} onChange={(e) => editField("puntos", Number(e.target.value) || 0)} />
+                <input type="number" placeholder="Puntos" value={ui.editForm.puntos ?? 0} onChange={(e) => editField("puntos", Number(e.target.value) || 0)} />
                 <div className="table-actions">
-                  <Button onClick={() => void guardarEdicion(selectedPersona.id)} disabled={saving}>
-                    {saving ? "Guardando..." : "Guardar cambios"}
+                  <Button onClick={() => void guardarEdicion(ui.selectedPersona!.id)} disabled={ui.saving}>
+                    {ui.saving ? "Guardando..." : "Guardar cambios"}
                   </Button>
-                  <Button variant="secondary" onClick={() => setEditingId("")}>
+                  <Button variant="secondary" onClick={() => patchUi({ editingId: "" })}>
                     Cancelar
                   </Button>
                 </div>
               </>
             ) : (
               <div className="stack-sm">
-                <p><strong>Nombre:</strong> {`${selectedPersona.nombre} ${selectedPersona.apellido1 ?? ""} ${selectedPersona.apellido2 ?? ""}`.trim()}</p>
-                <p><strong>Email:</strong> {selectedPersona.email ?? "-"}</p>
-                <p><strong>Telefono:</strong> {selectedPersona.telefono ?? "-"}</p>
-                <p><strong>Localidad:</strong> {selectedPersona.localidad ?? "-"}</p>
-                <p><strong>Fecha nacimiento:</strong> {selectedPersona.fechaNacimiento ?? "-"}</p>
-                <p><strong>Bautizado:</strong> {selectedPersona.bautizado ? "Si" : "No"}</p>
-                <p><strong>Puntos:</strong> {selectedPersona.puntos ?? 0}</p>
+                <p><strong>Nombre:</strong> {`${ui.selectedPersona.nombre} ${ui.selectedPersona.apellido1 ?? ""} ${ui.selectedPersona.apellido2 ?? ""}`.trim()}</p>
+                <p><strong>Email:</strong> {ui.selectedPersona.email ?? "-"}</p>
+                <p><strong>Telefono:</strong> {ui.selectedPersona.telefono ?? "-"}</p>
+                <p><strong>Localidad:</strong> {ui.selectedPersona.localidad ?? "-"}</p>
+                <p><strong>Fecha nacimiento:</strong> {ui.selectedPersona.fechaNacimiento ?? "-"}</p>
+                <p><strong>Bautizado:</strong> {ui.selectedPersona.bautizado ? "Si" : "No"}</p>
+                <p><strong>Puntos:</strong> {ui.selectedPersona.puntos ?? 0}</p>
                 <div className="table-actions">
-                  <Button onClick={() => abrirEdicion(selectedPersona)}>
+                  <Button onClick={() => abrirEdicion(ui.selectedPersona!)}>
                     Editar
                   </Button>
                 </div>

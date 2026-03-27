@@ -27,10 +27,6 @@ export type AppHeaderProps = {
   onLogout: () => void;
 };
 
-export type CalendarViewProps = {
-  onlyCurrentMonth?: boolean;
-};
-
 export type CalendarSectionProps = {
   onlyCurrentMonth?: boolean;
 };

@@ -1,36 +1,68 @@
-import { useState } from "react";
+import { useReducer } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 
+type SignupState = {
+  email: string;
+  password: string;
+  nombre: string;
+  apellido1: string;
+  apellido2: string;
+  error: string;
+  loading: boolean;
+};
+
+type SignupAction =
+  | { type: "setField"; field: "email" | "password" | "nombre" | "apellido1" | "apellido2"; value: string }
+  | { type: "setError"; value: string }
+  | { type: "setLoading"; value: boolean };
+
+const initialState: SignupState = {
+  email: "",
+  password: "",
+  nombre: "",
+  apellido1: "",
+  apellido2: "",
+  error: "",
+  loading: false,
+};
+
+function signupReducer(state: SignupState, action: SignupAction): SignupState {
+  switch (action.type) {
+    case "setField":
+      return { ...state, [action.field]: action.value };
+    case "setError":
+      return { ...state, error: action.value };
+    case "setLoading":
+      return { ...state, loading: action.value };
+    default:
+      return state;
+  }
+}
+
 export default function Signup() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [apellido1, setApellido1] = useState("");
-  const [apellido2, setApellido2] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(signupReducer, initialState);
   const navigate = useNavigate();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    dispatch({ type: "setError", value: "" });
+    dispatch({ type: "setLoading", value: true });
 
     try {
       // Crear usuario en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, state.email, state.password);
       const uid = userCredential.user.uid;
 
       // Guardar datos en Firestore
       await addDoc(collection(db, "personas"), {
         id: uid,
-        nombre,
-        apellido1,
-        apellido2,
-        email,
+        nombre: state.nombre,
+        apellido1: state.apellido1,
+        apellido2: state.apellido2,
+        email: state.email,
         puntos: 0,
         bautizado: false,
         createdAt: new Date(),
@@ -39,13 +71,13 @@ export default function Signup() {
       navigate("/"); // Redirigir al dashboard
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message);
+        dispatch({ type: "setError", value: err.message });
       } else {
-        setError("Error al registrarse");
+        dispatch({ type: "setError", value: "Error al registrarse" });
       }
     }
 
-    setLoading(false);
+    dispatch({ type: "setLoading", value: false });
   };
 
   return (
@@ -58,39 +90,39 @@ export default function Signup() {
         <input
           type="text"
           placeholder="Nombre"
-          value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
+          value={state.nombre}
+          onChange={(e) => dispatch({ type: "setField", field: "nombre", value: e.target.value })}
           required
         />
         <input
           type="text"
           placeholder="Apellido 1"
-          value={apellido1}
-          onChange={(e) => setApellido1(e.target.value)}
+          value={state.apellido1}
+          onChange={(e) => dispatch({ type: "setField", field: "apellido1", value: e.target.value })}
         />
         <input
           type="text"
           placeholder="Apellido 2"
-          value={apellido2}
-          onChange={(e) => setApellido2(e.target.value)}
+          value={state.apellido2}
+          onChange={(e) => dispatch({ type: "setField", field: "apellido2", value: e.target.value })}
         />
         <input
           type="email"
           placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={state.email}
+          onChange={(e) => dispatch({ type: "setField", field: "email", value: e.target.value })}
           required
         />
         <input
           type="password"
           placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          value={state.password}
+          onChange={(e) => dispatch({ type: "setField", field: "password", value: e.target.value })}
           required
         />
-        {error && <p className="form-message error">{error}</p>}
-        <button className="btn-primary" type="submit" disabled={loading}>
-          {loading ? "Registrando..." : "Registrarse"}
+        {state.error && <p className="form-message error">{state.error}</p>}
+        <button className="btn-primary" type="submit" disabled={state.loading}>
+          {state.loading ? "Registrando..." : "Registrarse"}
         </button>
       </form>
       <p className="auth-footer">
