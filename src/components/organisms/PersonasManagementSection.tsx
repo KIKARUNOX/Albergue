@@ -3,6 +3,7 @@ import { addDoc, collection, doc, getDocs, serverTimestamp, updateDoc } from "fi
 import { db } from "../../firebase";
 import type { PersonaDetalle, PersonaForm } from "../../type/persona";
 import Button from "../atoms/Button";
+import Modal from "../atoms/Modal";
 import PageSection from "../templates/PageSection";
 import StatusMessage from "../atoms/StatusMessage";
 
@@ -24,8 +25,8 @@ export default function PersonasManagementSection() {
   const [mensaje, setMensaje] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [expandedId, setExpandedId] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<PersonaDetalle | null>(null);
   const [editingId, setEditingId] = useState("");
   const [createForm, setCreateForm] = useState<PersonaForm>(emptyForm);
   const [editForm, setEditForm] = useState<PersonaForm>(emptyForm);
@@ -69,7 +70,7 @@ export default function PersonasManagementSection() {
   };
 
   const abrirEdicion = (persona: PersonaDetalle) => {
-    setExpandedId(persona.id);
+    setSelectedPersona(persona);
     setEditingId(persona.id);
     setEditForm({
       nombre: persona.nombre ?? "",
@@ -108,7 +109,7 @@ export default function PersonasManagementSection() {
       });
 
       setCreateForm(emptyForm);
-      setShowCreateForm(false);
+      setShowCreateModal(false);
       setMensaje("Persona registrada correctamente.");
       await cargarPersonas();
     } catch (error) {
@@ -143,6 +144,7 @@ export default function PersonasManagementSection() {
 
       setMensaje("Persona actualizada correctamente.");
       setEditingId("");
+      setSelectedPersona(null);
       await cargarPersonas();
     } catch (error) {
       console.error("Error al guardar persona:", error);
@@ -158,14 +160,57 @@ export default function PersonasManagementSection() {
 
       <div className="table-toolbar">
         <input placeholder="Buscar por nombre..." value={query} onChange={(e) => setQuery(e.target.value)} />
-        <Button variant="secondary" onClick={() => setShowCreateForm((prev) => !prev)}>
-          {showCreateForm ? "Cerrar formulario" : "Agregar persona"}
+        <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
+          Agregar persona
         </Button>
       </div>
 
-      {showCreateForm ? (
-        <article className="detail-card stack-sm">
-          <h3>Nueva persona</h3>
+      {loading ? (
+        <p>Cargando personas...</p>
+      ) : (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Puntos</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p) => (
+                <tr key={p.id}>
+                  <td data-label="Nombre">{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
+                  <td data-label="Email">{p.email ?? "-"}</td>
+                  <td data-label="Puntos">{p.puntos ?? 0}</td>
+                  <td data-label="Acciones">
+                    <div className="table-actions">
+                      <Button variant="secondary" onClick={() => setSelectedPersona(p)}>
+                        Ver detalles
+                      </Button>
+                      <Button variant="secondary" onClick={() => abrirEdicion(p)}>
+                        Editar
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modal para crear persona */}
+      <Modal
+        isOpen={showCreateModal}
+        title="Agregar persona"
+        onClose={() => {
+          setShowCreateModal(false);
+          setCreateForm(emptyForm);
+        }}
+      >
+        <div className="stack-sm">
           <input placeholder="Nombre *" value={createForm.nombre} onChange={(e) => createField("nombre", e.target.value)} />
           <input placeholder="Primer apellido" value={createForm.apellido1} onChange={(e) => createField("apellido1", e.target.value)} />
           <input placeholder="Segundo apellido" value={createForm.apellido2} onChange={(e) => createField("apellido2", e.target.value)} />
@@ -184,93 +229,65 @@ export default function PersonasManagementSection() {
           <Button onClick={() => void guardarNuevaPersona()} disabled={saving}>
             {saving ? "Guardando..." : "Guardar persona"}
           </Button>
-        </article>
-      ) : null}
+        </div>
+      </Modal>
 
-      {loading ? (
-        <p>Cargando personas...</p>
-      ) : (
-        <>
-          <div className="table-scroll">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Puntos</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => (
-                  <tr key={p.id}>
-                    <td data-label="Nombre">{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
-                    <td data-label="Email">{p.email ?? "-"}</td>
-                    <td data-label="Puntos">{p.puntos ?? 0}</td>
-                    <td data-label="Acciones">
-                      <div className="table-actions">
-                        <Button variant="secondary" onClick={() => setExpandedId((prev) => (prev === p.id ? "" : p.id))}>
-                          {expandedId === p.id ? "Ocultar" : "Ver detalles"}
-                        </Button>
-                        <Button variant="secondary" onClick={() => abrirEdicion(p)}>
-                          Editar
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* Modal para ver y editar detalles de persona */}
+      <Modal
+        isOpen={selectedPersona !== null}
+        title={editingId === selectedPersona?.id ? "Editar persona" : "Detalle de persona"}
+        onClose={() => {
+          setSelectedPersona(null);
+          setEditingId("");
+        }}
+      >
+        {selectedPersona && (
+          <div className="stack-sm">
+            {editingId === selectedPersona.id ? (
+              <>
+                <input placeholder="Nombre" value={editForm.nombre} onChange={(e) => editField("nombre", e.target.value)} />
+                <input placeholder="Primer apellido" value={editForm.apellido1} onChange={(e) => editField("apellido1", e.target.value)} />
+                <input placeholder="Segundo apellido" value={editForm.apellido2} onChange={(e) => editField("apellido2", e.target.value)} />
+                <input type="email" placeholder="Correo" value={editForm.email} onChange={(e) => editField("email", e.target.value)} />
+                <input placeholder="Telefono" value={editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
+                <input placeholder="Localidad" value={editForm.localidad} onChange={(e) => editField("localidad", e.target.value)} />
+                <label>
+                  Fecha de nacimiento
+                  <input type="date" value={editForm.fechaNacimiento} onChange={(e) => editField("fechaNacimiento", e.target.value)} />
+                </label>
+                <label className="checkbox-item">
+                  <input type="checkbox" checked={editForm.bautizado} onChange={(e) => editField("bautizado", e.target.checked)} />
+                  <span>Bautizado</span>
+                </label>
+                <input type="number" placeholder="Puntos" value={editForm.puntos ?? 0} onChange={(e) => editField("puntos", Number(e.target.value) || 0)} />
+                <div className="table-actions">
+                  <Button onClick={() => void guardarEdicion(selectedPersona.id)} disabled={saving}>
+                    {saving ? "Guardando..." : "Guardar cambios"}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setEditingId("")}>
+                    Cancelar
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="stack-sm">
+                <p><strong>Nombre:</strong> {`${selectedPersona.nombre} ${selectedPersona.apellido1 ?? ""} ${selectedPersona.apellido2 ?? ""}`.trim()}</p>
+                <p><strong>Email:</strong> {selectedPersona.email ?? "-"}</p>
+                <p><strong>Telefono:</strong> {selectedPersona.telefono ?? "-"}</p>
+                <p><strong>Localidad:</strong> {selectedPersona.localidad ?? "-"}</p>
+                <p><strong>Fecha nacimiento:</strong> {selectedPersona.fechaNacimiento ?? "-"}</p>
+                <p><strong>Bautizado:</strong> {selectedPersona.bautizado ? "Si" : "No"}</p>
+                <p><strong>Puntos:</strong> {selectedPersona.puntos ?? 0}</p>
+                <div className="table-actions">
+                  <Button onClick={() => abrirEdicion(selectedPersona)}>
+                    Editar
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-
-          {filtered.map((p) => {
-            if (expandedId !== p.id) return null;
-
-            return (
-              <article key={`${p.id}-detail`} className="detail-card stack-sm">
-                <h3>Detalle de persona</h3>
-                {editingId === p.id ? (
-                  <>
-                    <input placeholder="Nombre" value={editForm.nombre} onChange={(e) => editField("nombre", e.target.value)} />
-                    <input placeholder="Primer apellido" value={editForm.apellido1} onChange={(e) => editField("apellido1", e.target.value)} />
-                    <input placeholder="Segundo apellido" value={editForm.apellido2} onChange={(e) => editField("apellido2", e.target.value)} />
-                    <input type="email" placeholder="Correo" value={editForm.email} onChange={(e) => editField("email", e.target.value)} />
-                    <input placeholder="Telefono" value={editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
-                    <input placeholder="Localidad" value={editForm.localidad} onChange={(e) => editField("localidad", e.target.value)} />
-                    <label>
-                      Fecha de nacimiento
-                      <input type="date" value={editForm.fechaNacimiento} onChange={(e) => editField("fechaNacimiento", e.target.value)} />
-                    </label>
-                    <label className="checkbox-item">
-                      <input type="checkbox" checked={editForm.bautizado} onChange={(e) => editField("bautizado", e.target.checked)} />
-                      <span>Bautizado</span>
-                    </label>
-                    <input type="number" placeholder="Puntos" value={editForm.puntos ?? 0} onChange={(e) => editField("puntos", Number(e.target.value) || 0)} />
-                    <div className="table-actions">
-                      <Button onClick={() => void guardarEdicion(p.id)} disabled={saving}>
-                        Guardar cambios
-                      </Button>
-                      <Button variant="secondary" onClick={() => setEditingId("")}>
-                        Cancelar
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="stack-sm">
-                    <p><strong>Nombre:</strong> {`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</p>
-                    <p><strong>Email:</strong> {p.email ?? "-"}</p>
-                    <p><strong>Telefono:</strong> {p.telefono ?? "-"}</p>
-                    <p><strong>Localidad:</strong> {p.localidad ?? "-"}</p>
-                    <p><strong>Fecha nacimiento:</strong> {p.fechaNacimiento ?? "-"}</p>
-                    <p><strong>Bautizado:</strong> {p.bautizado ? "Si" : "No"}</p>
-                    <p><strong>Puntos:</strong> {p.puntos ?? 0}</p>
-                  </div>
-                )}
-              </article>
-            );
-          })}
-        </>
-      )}
+        )}
+      </Modal>
     </PageSection>
   );
 }

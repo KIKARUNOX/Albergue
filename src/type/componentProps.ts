@@ -70,11 +70,10 @@ export type AsistenciasListSectionProps = {
   asistencias: Asistencia[];
   personas: Persona[];
   loading: boolean;
-  getNombrePersona: (id: string) => string;
-  ordenarIdsPorNombre: (ids: string[]) => string[];
-  onUpdate: (id: string, data: { fecha: string; personas: string[] }) => void;
+  onEdit: (id: string) => void;
   onOpenReto: (id: string) => void;
   onDelete: (id: string) => void;
+  onViewDetails: (id: string) => void;
 };
 
 export type ExcelRow = Record<string, unknown>;
