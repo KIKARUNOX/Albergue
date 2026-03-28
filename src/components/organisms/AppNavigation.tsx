@@ -22,6 +22,11 @@ export default function AppNavigation({ permisos }: AppNavigationProps) {
           Importar
         </NavLink>
       ) : null}
+      {permisos.gestionarPermisos ? (
+        <NavLink to="/eventos" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+          Eventos
+        </NavLink>
+      ) : null}
       <NavLink to="/perfil" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
         Perfil
       </NavLink>

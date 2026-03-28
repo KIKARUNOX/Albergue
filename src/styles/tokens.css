@@ -1,14 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap');
 
 :root {
-  --surface: #f5f2ec;
+  --surface: #f8f8f8;
   --paper: #ffffff;
-  --ink: #2d2a2a;
-  --muted: #6f6b66;
-  --brand: #e95c2b;
-  --brand-dark: #b9401a;
-  --line: #e4ddd3;
-  --success: #1f8f5f;
-  --danger: #b42318;
-  --shadow: 0 18px 32px -24px rgba(39, 26, 10, 0.45);
+  --ink: #1a1a1a;
+  --muted: #666666;
+  --brand: #7c3aed;
+  --brand-dark: #6d28d9;
+  --line: #e0e0e0;
+  --success: #10b981;
+  --danger: #ef4444;
+  --shadow: 0 18px 32px -24px rgba(26, 26, 26, 0.2);
 }

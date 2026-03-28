@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Swal from "sweetalert2";
 import { auth } from "../firebase";
+import { Link } from "react-router-dom";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -65,8 +66,8 @@ export default function Login() {
     <div className="auth-layout">
       <section className="auth-card">
         <p className="eyebrow">Codigo316</p>
-        <h2>Login Admin</h2>
-        <p className="auth-subtitle">Ingresa con tu cuenta para gestionar asistencia y puntos.</p>
+        <h2>Login</h2>
+        <p className="auth-subtitle">Ingresa con tu cuenta</p>
         <form className="stack" onSubmit={login}>
           {error && <p className="form-message error">{error}</p>}
           <input
@@ -88,6 +89,9 @@ export default function Login() {
             {loading ? "Ingresando..." : "Ingresar"}
           </button>
         </form>
+        <p className="auth-footer">
+          ¿No tienes cuenta? <Link to="/signup">Regístrate aquí</Link>
+        </p>
       </section>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { defaultPermisosByRole } from "../lib/permissions";
@@ -88,31 +88,92 @@ export default function Signup() {
     dispatch({ type: "setLoading", value: true });
 
     try {
-      // Crear usuario en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
+      // Buscar si ya existe una persona con ese nombre y apellido
+      const q = query(
+        collection(db, "personas"),
+        where("nombre", "==", nombre),
+        where("apellido1", "==", apellido1)
+      );
+      const querySnapshot = await getDocs(q);
 
-      // Guardar datos en Firestore
-      await addDoc(collection(db, "personas"), {
-        id: uid,
-        authUid: uid,
-        role: "joven",
-        permisos: defaultPermisosByRole("joven"),
-        nombre,
-        apellido1,
-        apellido2,
-        email,
-        puntos: 0,
-        bautizado: false,
-        createdAt: new Date(),
+      let personaExistente: any = null;
+      querySnapshot.forEach((docSnapshot) => {
+        const rawData = docSnapshot.data();
+        personaExistente = {
+          nombre: rawData.nombre as string,
+          apellido1: rawData.apellido1,
+          apellido2: rawData.apellido2,
+          email: rawData.email,
+          authUid: rawData.authUid,
+          role: rawData.role,
+          permisos: rawData.permisos,
+          docId: docSnapshot.id,
+        } as any;
       });
 
-      await Swal.fire({
-        icon: "success",
-        title: "Registro exitoso",
-        text: "La cuenta se creo correctamente.",
-      });
-      navigate("/"); // Redirigir al dashboard
+      if (personaExistente && "docId" in personaExistente) {
+        // Persona ya existe
+        const docId = personaExistente.docId;
+        const emailExistente = personaExistente.email;
+        const role = personaExistente.role;
+        const permisos = personaExistente.permisos;
+
+        if (emailExistente && emailExistente !== email) {
+          await Swal.fire({
+            icon: "error",
+            title: "Ya existe",
+            text: `Existe una persona con ese nombre pero con email diferente: ${emailExistente}`,
+          });
+          dispatch({ type: "setLoading", value: false });
+          return;
+        }
+
+        // Persona existe sin email o con el mismo email - actualizar
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = userCredential.user.uid;
+
+        // Actualizar la persona existente con authUid y email
+        const personaRef = doc(db, "personas", docId);
+        await updateDoc(personaRef, {
+          authUid: uid,
+          email,
+          role: role || "joven",
+          permisos: permisos || defaultPermisosByRole("joven"),
+        });
+
+        await Swal.fire({
+          icon: "success",
+          title: "Registro exitoso",
+          text: "Tu cuenta se vinculó correctamente.",
+        });
+        navigate("/");
+      } else {
+        // Nueva persona - crear desde cero
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = userCredential.user.uid;
+
+        // Guardar datos en Firestore
+        await addDoc(collection(db, "personas"), {
+          id: uid,
+          authUid: uid,
+          role: "joven",
+          permisos: defaultPermisosByRole("joven"),
+          nombre,
+          apellido1,
+          apellido2,
+          email,
+          puntos: 0,
+          bautizado: false,
+          createdAt: new Date(),
+        });
+
+        await Swal.fire({
+          icon: "success",
+          title: "Registro exitoso",
+          text: "La cuenta se creo correctamente.",
+        });
+        navigate("/");
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         await Swal.fire({ icon: "error", title: "Error al registrarse", text: err.message });
@@ -131,7 +192,7 @@ export default function Signup() {
       <section className="auth-card">
       <p className="eyebrow">Codigo316</p>
       <h2>Crear Cuenta</h2>
-      <p className="auth-subtitle">Registra un nuevo administrador en el sistema.</p>
+      <p className="auth-subtitle">Registrate en el sistema.</p>
       <form className="stack" onSubmit={handleSignup}>
         <input
           type="text"
