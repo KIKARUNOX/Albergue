@@ -1,5 +1,28 @@
 # React + TypeScript + Vite
 
+
+## Configuracion
+
+1. Copia `.env.example` a `.env`.
+2. Completa variables publicas de frontend.
+3. Ejecuta la app.
+
+```bash
+npm install
+npm run dev
+```
+
+Variables esperadas:
+
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
+- `VITE_FIRESTORE_DATABASE_ID` (opcional)
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
