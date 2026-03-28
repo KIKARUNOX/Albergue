@@ -1,7 +1,9 @@
 import Button from "../atoms/Button";
 import type { AppHeaderProps } from "../../type/componentProps";
 
-export default function AppHeader({ onLogout }: AppHeaderProps) {
+export default function AppHeader({ onLogout, persona }: AppHeaderProps) {
+  const fullName = `${persona?.nombre ?? ""} ${persona?.apellido1 ?? ""} ${persona?.apellido2 ?? ""}`.trim();
+
   return (
     <header className="app-header">
       <div>
@@ -9,6 +11,9 @@ export default function AppHeader({ onLogout }: AppHeaderProps) {
         <p className="eyebrow"> Codigo  3:16</p>
 
         <h1 className="app-title">Panel de Administracion</h1>
+        <p className="small-text">
+          {fullName || persona?.email || "Usuario"} · Rol: {persona?.role ?? "coordinador"}
+        </p>
 
 
       </div>

@@ -1,6 +1,19 @@
 import type { Persona } from "./asistencia";
 
+export type PersonaRole = "joven" | "coordinador" | "lider";
+
+export type PersonaPermisos = {
+  dashboard: boolean;
+  asistencias: boolean;
+  personas: boolean;
+  importacion: boolean;
+  gestionarPermisos: boolean;
+};
+
 export type PersonaDetalle = Persona & {
+  authUid?: string;
+  role?: PersonaRole;
+  permisos?: Partial<PersonaPermisos>;
   email?: string;
   telefono?: string;
   localidad?: string;
@@ -8,7 +21,17 @@ export type PersonaDetalle = Persona & {
   bautizado?: boolean;
 };
 
-export type PersonaForm = Omit<PersonaDetalle, "id">;
+export type PersonaForm = {
+  nombre: string;
+  apellido1?: string;
+  apellido2?: string;
+  email?: string;
+  telefono?: string;
+  localidad?: string;
+  fechaNacimiento?: string;
+  bautizado?: boolean;
+  puntos?: number;
+};
 
 export type PersonaCumple = {
   nombre: string;

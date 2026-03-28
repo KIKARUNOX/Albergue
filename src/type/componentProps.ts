@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import type { Asistencia, Persona } from "./asistencia";
+import type { PersonaDetalle, PersonaPermisos } from "./persona";
 
 export type ButtonVariant = "primary" | "secondary" | "danger";
 
@@ -25,6 +26,20 @@ export type PageSectionProps = {
 
 export type AppHeaderProps = {
   onLogout: () => void;
+  persona?: PersonaDetalle | null;
+};
+
+export type AppNavigationProps = {
+  permisos: PersonaPermisos;
+};
+
+export type PersonasPageViewProps = {
+  canManagePermissions: boolean;
+};
+
+export type ProfileSectionProps = {
+  personaId: string;
+  persona: PersonaDetalle;
 };
 
 export type CalendarSectionProps = {

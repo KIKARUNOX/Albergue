@@ -4,6 +4,7 @@ import { auth, db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { defaultPermisosByRole } from "../lib/permissions";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -94,6 +95,9 @@ export default function Signup() {
       // Guardar datos en Firestore
       await addDoc(collection(db, "personas"), {
         id: uid,
+        authUid: uid,
+        role: "joven",
+        permisos: defaultPermisosByRole("joven"),
         nombre,
         apellido1,
         apellido2,

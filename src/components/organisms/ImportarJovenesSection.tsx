@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../../firebase";
+import { defaultPermisosByRole } from "../../lib/permissions";
 import type { ExcelRow } from "../../type/componentProps";
 import PageSection from "../templates/PageSection";
 
@@ -116,6 +117,8 @@ export default function ImportarJovenesSection() {
           nombre,
           apellido1,
           apellido2,
+          role: "joven",
+          permisos: defaultPermisosByRole("joven"),
           email: toText(findValue(r, ["email", "correo", "correo electronico", "correo electrónico"])),
           telefono,
           localidad,
