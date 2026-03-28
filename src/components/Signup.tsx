@@ -75,8 +75,7 @@ export default function Signup() {
         }),
       });
     } catch {
-      // Si el endpoint no esta disponible (p.ej. dev sin functions), continuar con alta local.
-      return { status: "no_match" };
+      throw new Error("No se pudo validar la persona en el servidor. Intenta de nuevo en unos minutos.");
     }
 
     const raw = await response.text();
@@ -97,7 +96,7 @@ export default function Signup() {
     };
 
     if (!response.ok && (response.status === 404 || response.status === 405)) {
-      return { status: "no_match" };
+      throw new Error("El endpoint de vinculacion no esta desplegado. Contacta al administrador.");
     }
 
     if (!response.ok && data.status !== "conflict") {
