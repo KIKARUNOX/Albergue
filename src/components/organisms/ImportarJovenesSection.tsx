@@ -1,6 +1,7 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import Swal from "sweetalert2";
 import { db } from "../../firebase";
 import type { ExcelRow } from "../../type/componentProps";
 import PageSection from "../templates/PageSection";
@@ -65,7 +66,23 @@ export default function ImportarJovenesSection() {
 
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Archivo requerido",
+        text: "Selecciona un archivo Excel para importar.",
+      });
+      return;
+    }
+    if (!/\.(xlsx|xls)$/i.test(file.name)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Formato invalido",
+        text: "Solo se permiten archivos .xlsx o .xls.",
+      });
+      e.target.value = "";
+      return;
+    }
 
     setLoading(true);
     setResultado("");
@@ -117,10 +134,20 @@ export default function ImportarJovenesSection() {
       }
 
       setResultado(`Importacion completada. Correctos: ${ok}, Fallidos: ${fail}`);
+      await Swal.fire({
+        icon: fail > 0 ? "warning" : "success",
+        title: "Importacion completada",
+        text: `Correctos: ${ok}, Fallidos: ${fail}`,
+      });
       })
       .catch((err: unknown) => {
         console.error(err);
         setResultado("Error leyendo el archivo Excel.");
+        void Swal.fire({
+          icon: "error",
+          title: "Error de importacion",
+          text: "Error leyendo el archivo Excel.",
+        });
       });
 
     setLoading(false);

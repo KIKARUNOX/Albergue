@@ -35,19 +35,25 @@ export default function RetoSection({
       <div className="stack-sm">
         <input
           type="text"
-          placeholder="Nombre del reto"
+          placeholder="Nombre del reto *"
           value={nombreReto}
+          required
+          maxLength={80}
           onChange={(e) => onNombreReto(e.target.value)}
         />
         <input
           type="number"
+          min={1}
+          step={1}
           placeholder="Puntos"
           value={puntosReto}
-          onChange={(e) => onPuntosReto(Number(e.target.value))}
+          onChange={(e) => onPuntosReto(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
         />
         <textarea
-          placeholder="Descripcion (opcional)"
+          placeholder="Descripcion del reto *"
           value={descripcionReto}
+          required
+          maxLength={280}
           onChange={(e) => onDescripcionReto(e.target.value)}
         />
       </div>

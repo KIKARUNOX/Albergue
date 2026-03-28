@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { addDoc, collection, doc, getDocs, serverTimestamp, updateDoc } from "firebase/firestore";
+import Swal from "sweetalert2";
 import { db } from "../../firebase";
 import type { PersonaDetalle, PersonaForm } from "../../type/persona";
 import Button from "../atoms/Button";
@@ -41,6 +42,25 @@ const initialUiState: PersonasManagementUiState = {
   editingId: "",
   createForm: emptyForm,
   editForm: emptyForm,
+};
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[0-9+()\-\s]{7,20}$/;
+
+const validarPersonaForm = (form: PersonaForm): string | null => {
+  if (!form.nombre.trim()) {
+    return "El nombre es obligatorio.";
+  }
+  if (form.email?.trim() && !EMAIL_PATTERN.test(form.email.trim())) {
+    return "El correo no tiene un formato valido.";
+  }
+  if (form.telefono?.trim() && !PHONE_PATTERN.test(form.telefono.trim())) {
+    return "El telefono solo puede contener numeros y simbolos basicos (+ - ( )).";
+  }
+  if (Number(form.puntos ?? 0) < 0) {
+    return "Los puntos no pueden ser negativos.";
+  }
+  return null;
 };
 
 export default function PersonasManagementSection() {
@@ -135,8 +155,14 @@ export default function PersonasManagementSection() {
   };
 
   const guardarNuevaPersona = async () => {
-    if (!ui.createForm.nombre.trim()) {
-      patchUi({ mensaje: "El nombre es obligatorio." });
+    const validationError = validarPersonaForm(ui.createForm);
+    if (validationError) {
+      patchUi({ mensaje: validationError });
+      await Swal.fire({
+        icon: "warning",
+        title: "Datos invalidos",
+        text: validationError,
+      });
       return;
     }
 
@@ -156,19 +182,35 @@ export default function PersonasManagementSection() {
       })
       .then(() => {
         patchUi({ createForm: emptyForm, showCreateModal: false, mensaje: "Persona registrada correctamente." });
+        return Swal.fire({
+          icon: "success",
+          title: "Registro exitoso",
+          text: "Persona registrada correctamente.",
+        });
       })
       .then(() => recargarPersonas())
       .catch((error: unknown) => {
         console.error("Error al crear persona:", error);
         patchUi({ mensaje: "No se pudo crear la persona." });
+        void Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo crear la persona.",
+        });
       });
 
     patchUi({ saving: false });
   };
 
   const guardarEdicion = async (id: string) => {
-    if (!ui.editForm.nombre.trim()) {
-      patchUi({ mensaje: "El nombre es obligatorio." });
+    const validationError = validarPersonaForm(ui.editForm);
+    if (validationError) {
+      patchUi({ mensaje: validationError });
+      await Swal.fire({
+        icon: "warning",
+        title: "Datos invalidos",
+        text: validationError,
+      });
       return;
     }
 
@@ -187,11 +229,21 @@ export default function PersonasManagementSection() {
       })
       .then(() => {
         patchUi({ mensaje: "Persona actualizada correctamente.", editingId: "", selectedPersona: null });
+        return Swal.fire({
+          icon: "success",
+          title: "Actualizacion exitosa",
+          text: "Persona actualizada correctamente.",
+        });
       })
       .then(() => recargarPersonas())
       .catch((error: unknown) => {
         console.error("Error al guardar persona:", error);
         patchUi({ mensaje: "No se pudo actualizar la persona." });
+        void Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo actualizar la persona.",
+        });
       });
 
     patchUi({ saving: false });
@@ -220,7 +272,7 @@ export default function PersonasManagementSection() {
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>Email</th>
+                <th>Telefono</th>
                 <th>Puntos</th>
                 <th>Acciones</th>
               </tr>
@@ -229,7 +281,7 @@ export default function PersonasManagementSection() {
               {filtered.map((p) => (
                 <tr key={p.id}>
                   <td data-label="Nombre">{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
-                  <td data-label="Email">{p.email ?? "-"}</td>
+                  <td data-label="Telefono">{p.telefono ?? "-"}</td>
                   <td data-label="Puntos">{p.puntos ?? 0}</td>
                   <td data-label="Acciones">
                     <div className="table-actions">
@@ -257,11 +309,11 @@ export default function PersonasManagementSection() {
         }}
       >
         <div className="stack-sm">
-          <input placeholder="Nombre *" value={ui.createForm.nombre} onChange={(e) => createField("nombre", e.target.value)} />
+          <input placeholder="Nombre *" required minLength={2} value={ui.createForm.nombre} onChange={(e) => createField("nombre", e.target.value)} />
           <input placeholder="Primer apellido" value={ui.createForm.apellido1} onChange={(e) => createField("apellido1", e.target.value)} />
           <input placeholder="Segundo apellido" value={ui.createForm.apellido2} onChange={(e) => createField("apellido2", e.target.value)} />
           <input type="email" placeholder="Correo" value={ui.createForm.email} onChange={(e) => createField("email", e.target.value)} />
-          <input placeholder="Telefono" value={ui.createForm.telefono} onChange={(e) => createField("telefono", e.target.value)} />
+          <input type="tel" pattern="[0-9+()\-\s]{7,20}" placeholder="Telefono" value={ui.createForm.telefono} onChange={(e) => createField("telefono", e.target.value)} />
           <input placeholder="Localidad" value={ui.createForm.localidad} onChange={(e) => createField("localidad", e.target.value)} />
           <label>
             Fecha de nacimiento
@@ -271,7 +323,7 @@ export default function PersonasManagementSection() {
             <input type="checkbox" checked={ui.createForm.bautizado} onChange={(e) => createField("bautizado", e.target.checked)} />
             <span>Bautizado</span>
           </label>
-          <input type="number" placeholder="Puntos" value={ui.createForm.puntos ?? 0} onChange={(e) => createField("puntos", Number(e.target.value) || 0)} />
+          <input type="number" min={0} step={1} placeholder="Puntos" value={ui.createForm.puntos ?? 0} onChange={(e) => createField("puntos", Number(e.target.value) || 0)} />
           <Button onClick={() => void guardarNuevaPersona()} disabled={ui.saving}>
             {ui.saving ? "Guardando..." : "Guardar persona"}
           </Button>
@@ -290,11 +342,11 @@ export default function PersonasManagementSection() {
           <div className="stack-sm">
             {ui.editingId === ui.selectedPersona.id ? (
               <>
-                <input placeholder="Nombre" value={ui.editForm.nombre} onChange={(e) => editField("nombre", e.target.value)} />
+                <input placeholder="Nombre" required minLength={2} value={ui.editForm.nombre} onChange={(e) => editField("nombre", e.target.value)} />
                 <input placeholder="Primer apellido" value={ui.editForm.apellido1} onChange={(e) => editField("apellido1", e.target.value)} />
                 <input placeholder="Segundo apellido" value={ui.editForm.apellido2} onChange={(e) => editField("apellido2", e.target.value)} />
                 <input type="email" placeholder="Correo" value={ui.editForm.email} onChange={(e) => editField("email", e.target.value)} />
-                <input placeholder="Telefono" value={ui.editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
+                <input type="tel" pattern="[0-9+()\-\s]{7,20}" placeholder="Telefono" value={ui.editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
                 <input placeholder="Localidad" value={ui.editForm.localidad} onChange={(e) => editField("localidad", e.target.value)} />
                 <label>
                   Fecha de nacimiento
@@ -304,7 +356,7 @@ export default function PersonasManagementSection() {
                   <input type="checkbox" checked={ui.editForm.bautizado} onChange={(e) => editField("bautizado", e.target.checked)} />
                   <span>Bautizado</span>
                 </label>
-                <input type="number" placeholder="Puntos" value={ui.editForm.puntos ?? 0} onChange={(e) => editField("puntos", Number(e.target.value) || 0)} />
+                <input type="number" min={0} step={1} placeholder="Puntos" value={ui.editForm.puntos ?? 0} onChange={(e) => editField("puntos", Number(e.target.value) || 0)} />
                 <div className="table-actions">
                   <Button onClick={() => void guardarEdicion(ui.selectedPersona!.id)} disabled={ui.saving}>
                     {ui.saving ? "Guardando..." : "Guardar cambios"}

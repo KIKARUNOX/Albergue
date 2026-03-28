@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FirebaseError } from "firebase/app";
 import { addDoc, collection, deleteDoc, doc, getDocs, increment, serverTimestamp, updateDoc } from "firebase/firestore";
+import Swal from "sweetalert2";
 import { db } from "../firebase";
 import type { Asistencia, AsistenciaDoc, Persona } from "../type/asistencia";
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export default function useAsistenciaPage() {
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
@@ -15,7 +18,7 @@ export default function useAsistenciaPage() {
   const [personasSeleccionadas, setPersonasSeleccionadas] = useState<string[]>([]);
 
   const [nombreReto, setNombreReto] = useState("");
-  const [puntosReto, setPuntosReto] = useState(5);
+  const [puntosReto, setPuntosReto] = useState(10);
   const [descripcionReto, setDescripcionReto] = useState("");
   const [personasCompletaron, setPersonasCompletaron] = useState<string[]>([]);
 
@@ -109,14 +112,33 @@ export default function useAsistenciaPage() {
     setPersonasCompletaron((asistenciaSeleccionada.completaron ?? []).filter((id) => asistentesSet.has(id)));
   }, [asistenciaSeleccionada]);
 
-  const crearAsistencia = useCallback(async () => {
+  const crearAsistencia = useCallback(async (): Promise<boolean> => {
     if (!newFecha) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Fecha requerida",
+        text: "Selecciona una fecha.",
+      });
       setMensaje("Selecciona una fecha.");
-      return;
+      return false;
+    }
+    if (!DATE_PATTERN.test(newFecha)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Fecha invalida",
+        text: "La fecha debe tener formato YYYY-MM-DD.",
+      });
+      setMensaje("La fecha no tiene un formato valido.");
+      return false;
     }
     if (personasSeleccionadas.length === 0) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Asistentes requeridos",
+        text: "Selecciona al menos una persona.",
+      });
       setMensaje("Selecciona al menos una persona.");
-      return;
+      return false;
     }
 
     try {
@@ -131,40 +153,101 @@ export default function useAsistenciaPage() {
       setNewFecha("2026-03-07");
       setPersonasSeleccionadas([]);
       setMensaje("Asistencia creada.");
+      await Swal.fire({
+        icon: "success",
+        title: "Asistencia creada",
+        text: "La asistencia se registro correctamente.",
+      });
       await cargarAsistencias();
+      return true;
     } catch (err) {
       console.error("Error al crear asistencia:", err);
       if (err instanceof FirebaseError && err.code === "permission-denied") {
+        await Swal.fire({
+          icon: "error",
+          title: "Sin permisos",
+          text: "No hay permisos para escribir en asistencias. Revisa reglas de Firestore.",
+        });
         setMensaje("No hay permisos para escribir en asistencias. Revisa reglas de Firestore.");
       } else {
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Error al crear asistencia.",
+        });
         setMensaje("Error al crear asistencia.");
       }
+      return false;
     }
   }, [cargarAsistencias, newFecha, personasSeleccionadas]);
 
-  const agregarReto = useCallback(async () => {
+  const agregarReto = useCallback(async (): Promise<boolean> => {
     if (!selectedAsistenciaId) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Asistencia requerida",
+        text: "Selecciona una asistencia.",
+      });
       setMensaje("Selecciona una asistencia.");
-      return;
+      return false;
     }
     if (!asistenciaSeleccionada) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Asistencia invalida",
+        text: "La asistencia seleccionada no existe.",
+      });
       setMensaje("La asistencia seleccionada no existe.");
-      return;
+      return false;
     }
-    if (!nombreReto) {
+    if (!nombreReto.trim()) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Nombre requerido",
+        text: "El nombre del reto es obligatorio.",
+      });
       setMensaje("El nombre del reto es obligatorio.");
-      return;
+      return false;
+    }
+    const puntosNormalizados = Math.floor(Number(puntosReto));
+    if (!Number.isFinite(puntosNormalizados) || puntosNormalizados <= 0) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Puntos invalidos",
+        text: "Los puntos del reto deben ser un numero positivo mayor a 0.",
+      });
+      setMensaje("Los puntos del reto deben ser un numero positivo mayor a 0.");
+      return false;
+    }
+    if (!descripcionReto.trim()) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Descripcion requerida",
+        text: "La descripcion del reto es obligatoria.",
+      });
+      setMensaje("La descripcion del reto es obligatoria.");
+      return false;
     }
 
     const asistentesSet = new Set(asistenciaSeleccionada.personas);
     const completaronValidos = personasCompletaron.filter((id) => asistentesSet.has(id));
     if (completaronValidos.length === 0) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Participantes requeridos",
+        text: "Selecciona al menos una persona que completo el reto.",
+      });
       setMensaje("Selecciona al menos una persona que completo el reto.");
-      return;
+      return false;
     }
     if (completaronValidos.length !== personasCompletaron.length) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Participantes invalidos",
+        text: "Solo se pueden marcar personas que asistieron ese dia.",
+      });
       setMensaje("Solo se pueden marcar personas que asistieron ese dia.");
-      return;
+      return false;
     }
 
     try {
@@ -172,28 +255,40 @@ export default function useAsistenciaPage() {
       const ref = doc(db, "asistencias", selectedAsistenciaId);
       await updateDoc(ref, {
         reto: {
-          nombre: nombreReto,
-          puntos: puntosReto,
-          descripcion: descripcionReto,
+          nombre: nombreReto.trim(),
+          puntos: puntosNormalizados,
+          descripcion: descripcionReto.trim(),
         },
         completaron: completaronValidos,
       });
 
       for (const personaId of completaronValidos) {
         const personaRef = doc(db, "personas", personaId);
-        await updateDoc(personaRef, { puntos: increment(puntosReto) });
+        await updateDoc(personaRef, { puntos: increment(puntosNormalizados) });
       }
 
       setNombreReto("");
-      setPuntosReto(5);
+      setPuntosReto(10);
       setDescripcionReto("");
       setPersonasCompletaron([]);
       setMensaje("Reto agregado y puntos asignados.");
+      await Swal.fire({
+        icon: "success",
+        title: "Reto agregado",
+        text: "Reto agregado y puntos asignados.",
+      });
       await cargarPersonas();
       await cargarAsistencias();
+      return true;
     } catch (err) {
       console.error("Error al agregar reto:", err);
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Error al agregar reto.",
+      });
       setMensaje("Error al agregar reto.");
+      return false;
     }
   }, [
     asistenciaSeleccionada,
@@ -207,30 +302,69 @@ export default function useAsistenciaPage() {
   ]);
 
   const eliminarAsistencia = useCallback(
-    async (id: string) => {
-      if (!confirm("¿Eliminar esta asistencia?")) return;
+    async (id: string): Promise<boolean> => {
+      const result = await Swal.fire({
+        icon: "warning",
+        title: "Eliminar asistencia",
+        text: "Esta accion no se puede deshacer.",
+        showCancelButton: true,
+        confirmButtonText: "Si, eliminar",
+        cancelButtonText: "Cancelar",
+      });
+      if (!result.isConfirmed) return false;
 
       try {
         await deleteDoc(doc(db, "asistencias", id));
         setMensaje("Asistencia eliminada.");
+        await Swal.fire({
+          icon: "success",
+          title: "Eliminada",
+          text: "Asistencia eliminada.",
+        });
         await cargarAsistencias();
+        return true;
       } catch (err) {
         console.error("Error al eliminar:", err);
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Error al eliminar asistencia.",
+        });
         setMensaje("Error al eliminar asistencia.");
+        return false;
       }
     },
     [cargarAsistencias],
   );
 
   const editarAsistencia = useCallback(
-    async (id: string, data: { fecha: string; personas: string[] }) => {
+    async (id: string, data: { fecha: string; personas: string[] }): Promise<boolean> => {
       if (!data.fecha) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Fecha requerida",
+          text: "La fecha es obligatoria.",
+        });
         setMensaje("La fecha es obligatoria.");
-        return;
+        return false;
+      }
+      if (!DATE_PATTERN.test(data.fecha)) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Fecha invalida",
+          text: "La fecha debe tener formato YYYY-MM-DD.",
+        });
+        setMensaje("La fecha no tiene un formato valido.");
+        return false;
       }
       if (data.personas.length === 0) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Asistentes requeridos",
+          text: "Selecciona al menos una persona asistente.",
+        });
         setMensaje("Selecciona al menos una persona asistente.");
-        return;
+        return false;
       }
 
       try {
@@ -245,10 +379,22 @@ export default function useAsistenciaPage() {
         });
 
         setMensaje("Asistencia actualizada.");
+        await Swal.fire({
+          icon: "success",
+          title: "Actualizada",
+          text: "Asistencia actualizada.",
+        });
         await cargarAsistencias();
+        return true;
       } catch (err) {
         console.error("Error al editar asistencia:", err);
+        await Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "Error al editar asistencia.",
+        });
         setMensaje("Error al editar asistencia.");
+        return false;
       }
     },
     [asistencias, cargarAsistencias],

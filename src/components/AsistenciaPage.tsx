@@ -68,8 +68,12 @@ export default function AsistenciaPage() {
           seleccionadas={personasSeleccionadas}
           onTogglePersona={togglePersonaSeleccionada}
           onCreate={() => {
-            void crearAsistencia();
-            setShowCreateModal(false);
+            void (async () => {
+              const ok = await crearAsistencia();
+              if (ok) {
+                setShowCreateModal(false);
+              }
+            })();
           }}
           loading={loading}
         />
@@ -95,8 +99,12 @@ export default function AsistenciaPage() {
           personasCompletaron={personasCompletaron}
           onTogglePersonaCompleto={togglePersonaCompleto}
           onAddReto={() => {
-            void agregarReto();
-            setShowRetoModal(false);
+            void (async () => {
+              const ok = await agregarReto();
+              if (ok) {
+                setShowRetoModal(false);
+              }
+            })();
           }}
         />
       </Modal>
@@ -208,11 +216,15 @@ export default function AsistenciaPage() {
             <div className="table-actions">
               <Button
                 onClick={() => {
-                  void editarAsistencia(selectedAsistenciaForEdit, { fecha: editFecha, personas: editPersonas });
-                  setShowEditModal(false);
-                  setSelectedAsistenciaForEdit(null);
-                  setEditFecha("");
-                  setEditPersonas([]);
+                  void (async () => {
+                    const ok = await editarAsistencia(selectedAsistenciaForEdit, { fecha: editFecha, personas: editPersonas });
+                    if (ok) {
+                      setShowEditModal(false);
+                      setSelectedAsistenciaForEdit(null);
+                      setEditFecha("");
+                      setEditPersonas([]);
+                    }
+                  })();
                 }}
               >
                 Guardar cambios

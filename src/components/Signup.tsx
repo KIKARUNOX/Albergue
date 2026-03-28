@@ -3,6 +3,9 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type SignupState = {
   email: string;
@@ -49,30 +52,69 @@ export default function Signup() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     dispatch({ type: "setError", value: "" });
+
+    const nombre = state.nombre.trim();
+    const apellido1 = state.apellido1.trim();
+    const apellido2 = state.apellido2.trim();
+    const email = state.email.trim().toLowerCase();
+    const password = state.password;
+
+    if (!nombre) {
+      await Swal.fire({ icon: "warning", title: "Nombre requerido", text: "El nombre es obligatorio." });
+      dispatch({ type: "setError", value: "El nombre es obligatorio." });
+      return;
+    }
+    if (!email) {
+      await Swal.fire({ icon: "warning", title: "Email requerido", text: "El email es obligatorio." });
+      dispatch({ type: "setError", value: "El email es obligatorio." });
+      return;
+    }
+    if (!EMAIL_PATTERN.test(email)) {
+      await Swal.fire({ icon: "warning", title: "Email invalido", text: "Ingresa un email valido." });
+      dispatch({ type: "setError", value: "Ingresa un email valido." });
+      return;
+    }
+    if (!password || password.length < 6) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Contraseña invalida",
+        text: "La contraseña debe tener al menos 6 caracteres.",
+      });
+      dispatch({ type: "setError", value: "La contraseña debe tener al menos 6 caracteres." });
+      return;
+    }
+
     dispatch({ type: "setLoading", value: true });
 
     try {
       // Crear usuario en Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, state.email, state.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const uid = userCredential.user.uid;
 
       // Guardar datos en Firestore
       await addDoc(collection(db, "personas"), {
         id: uid,
-        nombre: state.nombre,
-        apellido1: state.apellido1,
-        apellido2: state.apellido2,
-        email: state.email,
+        nombre,
+        apellido1,
+        apellido2,
+        email,
         puntos: 0,
         bautizado: false,
         createdAt: new Date(),
       });
 
+      await Swal.fire({
+        icon: "success",
+        title: "Registro exitoso",
+        text: "La cuenta se creo correctamente.",
+      });
       navigate("/"); // Redirigir al dashboard
     } catch (err: unknown) {
       if (err instanceof Error) {
+        await Swal.fire({ icon: "error", title: "Error al registrarse", text: err.message });
         dispatch({ type: "setError", value: err.message });
       } else {
+        await Swal.fire({ icon: "error", title: "Error al registrarse", text: "Error al registrarse" });
         dispatch({ type: "setError", value: "Error al registrarse" });
       }
     }
@@ -93,6 +135,7 @@ export default function Signup() {
           value={state.nombre}
           onChange={(e) => dispatch({ type: "setField", field: "nombre", value: e.target.value })}
           required
+          minLength={2}
         />
         <input
           type="text"
@@ -119,6 +162,7 @@ export default function Signup() {
           value={state.password}
           onChange={(e) => dispatch({ type: "setField", field: "password", value: e.target.value })}
           required
+          minLength={6}
         />
         {state.error && <p className="form-message error">{state.error}</p>}
         <button className="btn-primary" type="submit" disabled={state.loading}>
