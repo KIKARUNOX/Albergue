@@ -10,6 +10,9 @@ const currentMonth = `${currentYear}-${String(today.getMonth() + 1).padStart(2, 
 export default function AsistenciasListSection({
   asistencias,
   loading,
+  hasMore,
+  loadingMore,
+  onLoadMore,
   onEdit,
   onOpenReto,
   onDelete,
@@ -133,6 +136,12 @@ export default function AsistenciasListSection({
               </tbody>
             </table>
           </div>
+
+          {hasMore ? (
+            <Button variant="secondary" onClick={onLoadMore} disabled={loadingMore}>
+              {loadingMore ? "Cargando..." : "Cargar mas asistencias"}
+            </Button>
+          ) : null}
         </div>
       )}
     </PageSection>

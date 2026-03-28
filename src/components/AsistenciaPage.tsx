@@ -25,6 +25,7 @@ export default function AsistenciaPage() {
     personas,
     personasParaReto,
     loading,
+    loadingMoreAsistencias,
     mensaje,
     selectedAsistenciaId,
     setSelectedAsistenciaId,
@@ -46,10 +47,12 @@ export default function AsistenciaPage() {
     setProximoRetoDescripcion,
     proximoRetoEstado,
     hasProximoReto,
+    hasMoreAsistencias,
     savingProximoReto,
     guardarBorradorProximoReto,
     programarProximoReto,
     limpiarProximoReto,
+    cargarMasAsistencias,
     crearAsistencia,
     agregarReto,
     eliminarAsistencia,
@@ -148,6 +151,11 @@ export default function AsistenciaPage() {
         asistencias={asistencias}
         personas={personas}
         loading={loading}
+        hasMore={hasMoreAsistencias}
+        loadingMore={loadingMoreAsistencias}
+        onLoadMore={() => {
+          void cargarMasAsistencias();
+        }}
         onEdit={(id) => {
           const asistencia = asistencias.find(a => a.id === id);
           if (asistencia) {

@@ -1,8 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { addDoc, collection, doc, getDocs, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  doc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
+  startAfter,
+  updateDoc,
+} from "firebase/firestore";
+import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../../firebase";
 import { defaultPermisosByRole } from "../../lib/permissions";
+import { invalidateCache, setCachedValue, getCachedValue } from "../../lib/readCache";
+import { normalizeEmail, normalizeName, normalizePhone, normalizeRoleValue } from "../../lib/textNormalization";
 import type { PersonaDetalle, PersonaForm, PersonaPermisos, PersonaRole } from "../../type/persona";
 import Button from "../atoms/Button";
 import Modal from "../atoms/Modal";
@@ -55,6 +69,9 @@ const initialUiState: PersonasManagementUiState = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+()\s-]{7,20}$/;
+const PERSONAS_PAGE_SIZE = 40;
+const PERSONAS_CACHE_KEY = "personas:first-page";
+const PERSONAS_CACHE_TTL_MS = 2 * 60 * 1000;
 
 const validarPersonaForm = (form: PersonaForm): string | null => {
   if (!form.nombre.trim()) {
@@ -89,27 +106,52 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
 
   const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
   const [ui, setUi] = useState<PersonasManagementUiState>(initialUiState);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const patchUi = (next: Partial<PersonasManagementUiState>) => {
     setUi((prev) => ({ ...prev, ...next }));
   };
 
-  const fetchPersonas = async () => {
-    const snapshot = await getDocs(collection(db, "personas"));
+  const fetchPersonasPage = async (cursor?: QueryDocumentSnapshot<DocumentData>) => {
+    const personasQuery = cursor
+      ? query(collection(db, "personas"), orderBy("nombre", "asc"), limit(PERSONAS_PAGE_SIZE), startAfter(cursor))
+      : query(collection(db, "personas"), orderBy("nombre", "asc"), limit(PERSONAS_PAGE_SIZE));
+
+    const snapshot = await getDocs(personasQuery);
     const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
     data.sort((a, b) => `${a.nombre} ${a.apellido1 ?? ""}`.localeCompare(`${b.nombre} ${b.apellido1 ?? ""}`, "es"));
+    return {
+      data,
+      nextCursor: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+      hasMore: snapshot.docs.length === PERSONAS_PAGE_SIZE,
+    };
+  };
 
-    return data;
+  const loadInitialPersonas = async () => {
+    patchUi({ loading: true });
+
+    const cached = getCachedValue<PersonaDetalle[]>(PERSONAS_CACHE_KEY);
+    if (cached && cached.length > 0) {
+      setPersonas(cached);
+      patchUi({ loading: false });
+    }
+
+    const { data, nextCursor, hasMore: nextHasMore } = await fetchPersonasPage();
+    setPersonas(data);
+    setLastDoc(nextCursor);
+    setHasMore(nextHasMore);
+    setCachedValue(PERSONAS_CACHE_KEY, data, PERSONAS_CACHE_TTL_MS);
+    patchUi({ loading: false });
   };
 
   useEffect(() => {
     let mounted = true;
 
-    void fetchPersonas()
-      .then((data) => {
+    void loadInitialPersonas()
+      .then(() => {
         if (!mounted) return;
-        setPersonas(data);
-        patchUi({ loading: false });
       })
       .catch((error: unknown) => {
         if (!mounted) return;
@@ -124,19 +166,37 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
   }, []);
 
   const recargarPersonas = async () => {
-    patchUi({ loading: true });
+    invalidateCache(PERSONAS_CACHE_KEY);
 
-    await fetchPersonas()
-      .then((data) => {
-        setPersonas(data);
+    await loadInitialPersonas().catch((error: unknown) => {
+      console.error("Error al cargar personas:", error);
+      patchUi({ mensaje: "No se pudieron cargar las personas." });
+      setPersonas([]);
+      setLastDoc(null);
+      setHasMore(false);
+    });
+  };
+
+  const cargarMasPersonas = async () => {
+    if (!hasMore || !lastDoc || loadingMore) return;
+
+    setLoadingMore(true);
+    await fetchPersonasPage(lastDoc)
+      .then(({ data, nextCursor, hasMore: nextHasMore }) => {
+        setPersonas((prev) => {
+          const merged = [...prev, ...data];
+          setCachedValue(PERSONAS_CACHE_KEY, merged.slice(0, PERSONAS_PAGE_SIZE), PERSONAS_CACHE_TTL_MS);
+          return merged;
+        });
+        setLastDoc(nextCursor);
+        setHasMore(nextHasMore);
       })
       .catch((error: unknown) => {
-        console.error("Error al cargar personas:", error);
-        patchUi({ mensaje: "No se pudieron cargar las personas." });
-        setPersonas([]);
+        console.error("Error al cargar mas personas:", error);
+        patchUi({ mensaje: "No se pudieron cargar mas personas." });
       });
 
-    patchUi({ loading: false });
+    setLoadingMore(false);
   };
 
   const filtered = useMemo(() => {
@@ -214,16 +274,16 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
     patchUi({ saving: true, mensaje: "" });
 
     await addDoc(collection(db, "personas"), {
-        nombre: ui.createForm.nombre.trim(),
-        apellido1: ui.createForm.apellido1?.trim() ?? "",
-        apellido2: ui.createForm.apellido2?.trim() ?? "",
-        email: ui.createForm.email?.trim() ?? "",
-        telefono: ui.createForm.telefono?.trim() ?? "",
+        nombre: normalizeName(ui.createForm.nombre),
+        apellido1: normalizeName(ui.createForm.apellido1),
+        apellido2: normalizeName(ui.createForm.apellido2),
+        email: normalizeEmail(ui.createForm.email),
+        telefono: normalizePhone(ui.createForm.telefono),
         localidad: ui.createForm.localidad?.trim() ?? "",
         fechaNacimiento: ui.createForm.fechaNacimiento ?? "",
         bautizado: Boolean(ui.createForm.bautizado),
         puntos: Number(ui.createForm.puntos ?? 0),
-        role: canManagePermissions ? ui.createRole : "joven",
+        role: canManagePermissions ? normalizeRoleValue(ui.createRole) : "joven",
         permisos: canManagePermissions ? ui.createPermisos : defaultPermisosByRole("joven"),
         createdAt: serverTimestamp(),
       })
@@ -270,18 +330,18 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
     patchUi({ saving: true, mensaje: "" });
 
     await updateDoc(doc(db, "personas", id), {
-        nombre: ui.editForm.nombre.trim(),
-        apellido1: ui.editForm.apellido1?.trim() ?? "",
-        apellido2: ui.editForm.apellido2?.trim() ?? "",
-        email: ui.editForm.email?.trim() ?? "",
-        telefono: ui.editForm.telefono?.trim() ?? "",
+        nombre: normalizeName(ui.editForm.nombre),
+        apellido1: normalizeName(ui.editForm.apellido1),
+        apellido2: normalizeName(ui.editForm.apellido2),
+        email: normalizeEmail(ui.editForm.email),
+        telefono: normalizePhone(ui.editForm.telefono),
         localidad: ui.editForm.localidad?.trim() ?? "",
         fechaNacimiento: ui.editForm.fechaNacimiento ?? "",
         bautizado: Boolean(ui.editForm.bautizado),
         puntos: Number(ui.editForm.puntos ?? 0),
         ...(canManagePermissions
           ? {
-              role: ui.editRole,
+              role: normalizeRoleValue(ui.editRole),
               permisos: ui.editPermisos,
             }
           : {}),
@@ -326,38 +386,46 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
       {ui.loading ? (
         <p>Cargando personas...</p>
       ) : (
-        <div className="table-scroll">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Telefono</th>
-                <th>Rol</th>
-                <th>Puntos</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => (
-                <tr key={p.id}>
-                  <td data-label="Nombre">{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
-                  <td data-label="Telefono">{p.telefono ?? "-"}</td>
-                  <td data-label="Rol">{p.role ?? "coordinador"}</td>
-                  <td data-label="Puntos">{p.puntos ?? 0}</td>
-                  <td data-label="Acciones">
-                    <div className="table-actions">
-                      <Button variant="secondary" onClick={() => patchUi({ selectedPersona: p })}>
-                        Ver detalles
-                      </Button>
-                      <Button variant="secondary" onClick={() => abrirEdicion(p)}>
-                        Editar
-                      </Button>
-                    </div>
-                  </td>
+        <div className="stack-sm">
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Telefono</th>
+                  <th>Rol</th>
+                  <th>Puntos</th>
+                  <th>Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filtered.map((p) => (
+                  <tr key={p.id}>
+                    <td data-label="Nombre">{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
+                    <td data-label="Telefono">{p.telefono ?? "-"}</td>
+                    <td data-label="Rol">{p.role ?? "coordinador"}</td>
+                    <td data-label="Puntos">{p.puntos ?? 0}</td>
+                    <td data-label="Acciones">
+                      <div className="table-actions">
+                        <Button variant="secondary" onClick={() => patchUi({ selectedPersona: p })}>
+                          Ver detalles
+                        </Button>
+                        <Button variant="secondary" onClick={() => abrirEdicion(p)}>
+                          Editar
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {hasMore ? (
+            <Button variant="secondary" onClick={() => void cargarMasPersonas()} disabled={loadingMore}>
+              {loadingMore ? "Cargando..." : "Cargar mas personas"}
+            </Button>
+          ) : null}
         </div>
       )}
 

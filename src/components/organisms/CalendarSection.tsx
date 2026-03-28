@@ -15,7 +15,11 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 import type { CalendarSectionProps } from "../../type/componentProps";
 import type { PersonaCumple } from "../../type/persona";
+import { getCachedValue, setCachedValue } from "../../lib/readCache";
 import PageSection from "../templates/PageSection";
+
+const CALENDAR_CACHE_KEY = "personas:calendario";
+const CALENDAR_CACHE_TTL_MS = 2 * 60 * 1000;
 
 const monthNames = [
   "Enero",
@@ -78,9 +82,16 @@ export default function CalendarSection({ onlyCurrentMonth = false }: CalendarSe
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const cached = getCachedValue<PersonaCumple[]>(CALENDAR_CACHE_KEY);
+        if (cached && cached.length > 0) {
+          const withBirthdayCached = cached.filter((p) => p.fechaNacimiento);
+          setCalendarData({ cumples: withBirthdayCached, error: "" });
+        }
+
         const snapshot = await getDocs(collection(db, "personas"));
         const data = snapshot.docs.map((doc) => doc.data() as PersonaCumple);
         const withBirthday = data.filter((p) => p.fechaNacimiento);
+        setCachedValue(CALENDAR_CACHE_KEY, withBirthday, CALENDAR_CACHE_TTL_MS);
         setCalendarData({ cumples: withBirthday, error: "" });
       } catch (err) {
         console.error("Error al cargar cumpleanos:", err);

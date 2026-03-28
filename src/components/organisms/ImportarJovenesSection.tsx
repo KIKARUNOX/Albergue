@@ -4,6 +4,7 @@ import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../../firebase";
 import { defaultPermisosByRole } from "../../lib/permissions";
+import { normalizeEmail, normalizeName, normalizePhone, normalizeRoleValue } from "../../lib/textNormalization";
 import type { ExcelRow } from "../../type/componentProps";
 import PageSection from "../templates/PageSection";
 
@@ -114,13 +115,13 @@ export default function ImportarJovenesSection() {
         const bautizadoRaw = findValue(r, ["bautizado", "bautizada"]);
 
         await addDoc(collection(db, "personas"), {
-          nombre,
-          apellido1,
-          apellido2,
-          role: "joven",
+          nombre: normalizeName(nombre),
+          apellido1: normalizeName(apellido1),
+          apellido2: normalizeName(apellido2),
+          role: normalizeRoleValue("joven"),
           permisos: defaultPermisosByRole("joven"),
-          email: toText(findValue(r, ["email", "correo", "correo electronico", "correo electrónico"])),
-          telefono,
+          email: normalizeEmail(toText(findValue(r, ["email", "correo", "correo electronico", "correo electrónico"]))),
+          telefono: normalizePhone(telefono),
           localidad,
           fechaNacimiento,
           edad: toNumber(edadRaw, 0),

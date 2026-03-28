@@ -81,6 +81,9 @@ export type AsistenciasListSectionProps = {
   asistencias: Asistencia[];
   personas: Persona[];
   loading: boolean;
+  hasMore: boolean;
+  loadingMore: boolean;
+  onLoadMore: () => void;
   onEdit: (id: string) => void;
   onOpenReto: (id: string) => void;
   onDelete: (id: string) => void;

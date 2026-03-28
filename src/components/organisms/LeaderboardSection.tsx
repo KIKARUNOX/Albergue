@@ -3,8 +3,12 @@ import { collection, doc, getDocs, updateDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import type { LeaderboardSectionProps } from "../../type/componentProps";
 import type { PersonaPuntaje } from "../../type/persona";
+import { getCachedValue, invalidateCache, setCachedValue } from "../../lib/readCache";
 import Button from "../atoms/Button";
 import PageSection from "../templates/PageSection";
+
+const LEADERBOARD_CACHE_KEY = "personas:leaderboard";
+const LEADERBOARD_CACHE_TTL_MS = 60 * 1000;
 
 type LeaderboardDataState = {
   personas: PersonaPuntaje[];
@@ -21,9 +25,15 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardDataState>({ personas: [], error: "" });
 
   const cargar = async () => {
+    const cached = getCachedValue<PersonaPuntaje[]>(LEADERBOARD_CACHE_KEY);
+    if (cached && cached.length > 0) {
+      return cached;
+    }
+
     const snapshot = await getDocs(collection(db, "personas"));
     const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaPuntaje));
     data.sort((a, b) => (b.puntos ?? 0) - (a.puntos ?? 0));
+    setCachedValue(LEADERBOARD_CACHE_KEY, data, LEADERBOARD_CACHE_TTL_MS);
     return data;
   };
 
@@ -49,6 +59,9 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
   const sumar = async (id: string, puntosActuales = 0) => {
     setLeaderboardData((prev) => ({ ...prev, error: "" }));
     await updateDoc(doc(db, "personas", id), { puntos: puntosActuales + 1 })
+      .then(() => {
+        invalidateCache(LEADERBOARD_CACHE_KEY);
+      })
       .then(() => cargar())
       .then((data) => {
         setLeaderboardData({ personas: data, error: "" });
@@ -62,6 +75,9 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
   const restar = async (id: string, puntosActuales = 0) => {
     setLeaderboardData((prev) => ({ ...prev, error: "" }));
     await updateDoc(doc(db, "personas", id), { puntos: Math.max(0, puntosActuales - 1) })
+      .then(() => {
+        invalidateCache(LEADERBOARD_CACHE_KEY);
+      })
       .then(() => cargar())
       .then((data) => {
         setLeaderboardData({ personas: data, error: "" });

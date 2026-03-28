@@ -5,6 +5,7 @@ import { collection, addDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { defaultPermisosByRole } from "../lib/permissions";
+import { normalizeEmail, normalizeName } from "../lib/textNormalization";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -121,7 +122,7 @@ export default function Signup() {
     const nombre = state.nombre.trim();
     const apellido1 = state.apellido1.trim();
     const apellido2 = state.apellido2.trim();
-    const email = state.email.trim().toLowerCase();
+    const email = normalizeEmail(state.email);
     const password = state.password;
 
     if (!nombre) {
@@ -182,9 +183,9 @@ export default function Signup() {
           authUid: uid,
           role: "joven",
           permisos: defaultPermisosByRole("joven"),
-          nombre,
-          apellido1,
-          apellido2,
+          nombre: normalizeName(nombre),
+          apellido1: normalizeName(apellido1),
+          apellido2: normalizeName(apellido2),
           email,
           puntos: 0,
           bautizado: false,

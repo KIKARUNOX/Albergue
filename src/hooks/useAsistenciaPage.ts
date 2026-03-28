@@ -1,20 +1,43 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FirebaseError } from "firebase/app";
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, increment, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  increment,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  startAfter,
+  updateDoc,
+} from "firebase/firestore";
+import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../firebase";
 import type { Asistencia, AsistenciaDoc, Persona } from "../type/asistencia";
+import { getCachedValue, invalidateCache, setCachedValue } from "../lib/readCache";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const RETO_PROXIMA_SEMANA_DOC = doc(db, "configuracion", "retoProximaSemana");
 type ProximoRetoEstado = "sin-reto" | "borrador" | "programado" | "aplicado";
+const ASISTENCIAS_PAGE_SIZE = 50;
+const PERSONAS_HOOK_CACHE_KEY = "personas:asistencia";
+const PERSONAS_HOOK_CACHE_TTL_MS = 2 * 60 * 1000;
 
 export default function useAsistenciaPage() {
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMoreAsistencias, setLoadingMoreAsistencias] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [selectedAsistenciaId, setSelectedAsistenciaId] = useState("");
+  const [lastAsistenciaDoc, setLastAsistenciaDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [hasMoreAsistencias, setHasMoreAsistencias] = useState(false);
 
   const [newFecha, setNewFecha] = useState("2026-03-07");
   const [personasSeleccionadas, setPersonasSeleccionadas] = useState<string[]>([]);
@@ -58,10 +81,26 @@ export default function useAsistenciaPage() {
     [personas],
   );
 
-  const cargarAsistencias = useCallback(async () => {
+  const cargarAsistencias = useCallback(async ({ reset = true }: { reset?: boolean } = {}) => {
     try {
-      setLoading(true);
-      const snapshot = await getDocs(collection(db, "asistencias"));
+      if (reset) {
+        setLoading(true);
+      } else {
+        setLoadingMoreAsistencias(true);
+      }
+
+      const asistenciasQuery = reset
+        ? query(collection(db, "asistencias"), orderBy("fecha", "desc"), limit(ASISTENCIAS_PAGE_SIZE))
+        : lastAsistenciaDoc
+          ? query(collection(db, "asistencias"), orderBy("fecha", "desc"), limit(ASISTENCIAS_PAGE_SIZE), startAfter(lastAsistenciaDoc))
+          : null;
+
+      if (!asistenciasQuery) {
+        setHasMoreAsistencias(false);
+        return;
+      }
+
+      const snapshot = await getDocs(asistenciasQuery);
       const data = snapshot.docs.map((d) => {
         const raw = d.data() as AsistenciaDoc;
         return {
@@ -72,21 +111,33 @@ export default function useAsistenciaPage() {
           completaron: Array.isArray(raw.completaron) ? raw.completaron : [],
         } as Asistencia;
       });
-      data.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-      setAsistencias(data);
+
+      setAsistencias((prev) => (reset ? data : [...prev, ...data]));
+      setLastAsistenciaDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
+      setHasMoreAsistencias(snapshot.docs.length === ASISTENCIAS_PAGE_SIZE);
     } catch (err) {
       console.error("Error al cargar asistencias:", err);
       setMensaje("Error al cargar asistencias.");
     } finally {
-      setLoading(false);
+      if (reset) {
+        setLoading(false);
+      } else {
+        setLoadingMoreAsistencias(false);
+      }
     }
-  }, []);
+  }, [lastAsistenciaDoc]);
 
   const cargarPersonas = useCallback(async () => {
     try {
-      const snapshot = await getDocs(collection(db, "personas"));
+      const cached = getCachedValue<Persona[]>(PERSONAS_HOOK_CACHE_KEY);
+      if (cached && cached.length > 0) {
+        setPersonas(ordenarPersonas(cached));
+      }
+
+      const snapshot = await getDocs(query(collection(db, "personas"), orderBy("nombre", "asc"), limit(300)));
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Persona));
       setPersonas(ordenarPersonas(data));
+      setCachedValue(PERSONAS_HOOK_CACHE_KEY, data, PERSONAS_HOOK_CACHE_TTL_MS);
     } catch (err) {
       console.error("Error al cargar personas:", err);
       setMensaje("Error al cargar personas.");
@@ -133,7 +184,7 @@ export default function useAsistenciaPage() {
   }, []);
 
   useEffect(() => {
-    void cargarAsistencias();
+    void cargarAsistencias({ reset: true });
     void cargarPersonas();
     void cargarProximoReto();
   }, [cargarAsistencias, cargarPersonas, cargarProximoReto]);
@@ -383,7 +434,7 @@ export default function useAsistenciaPage() {
           ? "La asistencia se registro y se aplico el reto semanal automaticamente."
           : "La asistencia se registro correctamente.",
       });
-      await cargarAsistencias();
+      await cargarAsistencias({ reset: true });
       return true;
     } catch (err) {
       console.error("Error al crear asistencia:", err);
@@ -499,6 +550,8 @@ export default function useAsistenciaPage() {
         await updateDoc(personaRef, { puntos: increment(puntosNormalizados) });
       }
 
+      invalidateCache(PERSONAS_HOOK_CACHE_KEY);
+
       setNombreReto("");
       setPuntosReto(10);
       setDescripcionReto("");
@@ -510,7 +563,7 @@ export default function useAsistenciaPage() {
         text: "Reto agregado y puntos asignados.",
       });
       await cargarPersonas();
-      await cargarAsistencias();
+      await cargarAsistencias({ reset: true });
       return true;
     } catch (err) {
       console.error("Error al agregar reto:", err);
@@ -553,7 +606,7 @@ export default function useAsistenciaPage() {
           title: "Eliminada",
           text: "Asistencia eliminada.",
         });
-        await cargarAsistencias();
+        await cargarAsistencias({ reset: true });
         return true;
       } catch (err) {
         console.error("Error al eliminar:", err);
@@ -616,7 +669,7 @@ export default function useAsistenciaPage() {
           title: "Actualizada",
           text: "Asistencia actualizada.",
         });
-        await cargarAsistencias();
+        await cargarAsistencias({ reset: true });
         return true;
       } catch (err) {
         console.error("Error al editar asistencia:", err);
@@ -632,6 +685,11 @@ export default function useAsistenciaPage() {
     [asistencias, cargarAsistencias],
   );
 
+  const cargarMasAsistencias = useCallback(async (): Promise<void> => {
+    if (!hasMoreAsistencias || loadingMoreAsistencias) return;
+    await cargarAsistencias({ reset: false });
+  }, [cargarAsistencias, hasMoreAsistencias, loadingMoreAsistencias]);
+
   const togglePersonaSeleccionada = useCallback((id: string) => {
     setPersonasSeleccionadas((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   }, []);
@@ -645,6 +703,7 @@ export default function useAsistenciaPage() {
     personas,
     personasParaReto,
     loading,
+    loadingMoreAsistencias,
     mensaje,
     selectedAsistenciaId,
     setSelectedAsistenciaId,
@@ -667,10 +726,12 @@ export default function useAsistenciaPage() {
     proximoRetoEstado,
     setProximoRetoEstado,
     hasProximoReto,
+    hasMoreAsistencias,
     savingProximoReto,
     guardarBorradorProximoReto,
     programarProximoReto,
     limpiarProximoReto,
+    cargarMasAsistencias,
     crearAsistencia,
     agregarReto,
     eliminarAsistencia,
