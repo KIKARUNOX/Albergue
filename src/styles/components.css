@@ -104,6 +104,10 @@ button:disabled {
   color: var(--muted);
 }
 
+.reto-descripcion {
+  white-space: pre-wrap;
+}
+
 .inline-actions {
   display: inline-flex;
   gap: 0.4rem;

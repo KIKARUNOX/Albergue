@@ -54,6 +54,7 @@ export default function RetoSection({
           value={descripcionReto}
           required
           maxLength={280}
+          rows={4}
           onChange={(e) => onDescripcionReto(e.target.value)}
         />
       </div>

@@ -7,6 +7,7 @@ import AsistenciaCreationSection from "./organisms/AsistenciaCreationSection";
 import RetoSection from "./organisms/RetoSection";
 import AsistenciasListSection from "./organisms/AsistenciasListSection";
 import InasistentesSection from "./organisms/InasistentesSection";
+import ProximoRetoManagementSection from "./organisms/ProximoRetoManagementSection";
 import useAsistenciaPage from "../hooks/useAsistenciaPage";
 
 export default function AsistenciaPage() {
@@ -37,6 +38,16 @@ export default function AsistenciaPage() {
     descripcionReto,
     setDescripcionReto,
     personasCompletaron,
+    proximoRetoNombre,
+    setProximoRetoNombre,
+    proximoRetoPuntos,
+    setProximoRetoPuntos,
+    proximoRetoDescripcion,
+    setProximoRetoDescripcion,
+    hasProximoReto,
+    savingProximoReto,
+    guardarProximoReto,
+    limpiarProximoReto,
     crearAsistencia,
     agregarReto,
     eliminarAsistencia,
@@ -55,6 +66,23 @@ export default function AsistenciaPage() {
       <Button variant="secondary" onClick={() => setShowCreateModal(true)}>
         Agregar asistencia
       </Button>
+
+      <ProximoRetoManagementSection
+        nombre={proximoRetoNombre}
+        onNombre={setProximoRetoNombre}
+        puntos={proximoRetoPuntos}
+        onPuntos={setProximoRetoPuntos}
+        descripcion={proximoRetoDescripcion}
+        onDescripcion={setProximoRetoDescripcion}
+        onGuardar={() => {
+          void guardarProximoReto();
+        }}
+        onLimpiar={() => {
+          void limpiarProximoReto();
+        }}
+        hasReto={hasProximoReto}
+        loading={savingProximoReto}
+      />
 
       {/* Modal para crear asistencia */}
       <Modal
@@ -169,7 +197,7 @@ export default function AsistenciaPage() {
                       <p>
                         <strong>Reto:</strong> {asistencia.reto.nombre} (+{asistencia.reto.puntos} pts)
                       </p>
-                      {asistencia.reto.descripcion ? <p className="small-text">{asistencia.reto.descripcion}</p> : null}
+                      {asistencia.reto.descripcion ? <p className="small-text reto-descripcion">{asistencia.reto.descripcion}</p> : null}
                       <p>
                         <strong>Completaron:</strong> {asistencia.completaron.length}
                       </p>

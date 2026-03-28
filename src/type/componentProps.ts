@@ -93,6 +93,19 @@ export type InasistentesSectionProps = {
   threshold?: number;
 };
 
+export type ProximoRetoManagementSectionProps = {
+  nombre: string;
+  onNombre: (value: string) => void;
+  puntos: number;
+  onPuntos: (value: number) => void;
+  descripcion: string;
+  onDescripcion: (value: string) => void;
+  onGuardar: () => void;
+  onLimpiar: () => void;
+  hasReto: boolean;
+  loading: boolean;
+};
+
 export type ExcelRow = Record<string, unknown>;
 
 export type RegistrarPersonaFormData = {
