@@ -9,16 +9,28 @@ export default function ProximoRetoManagementSection({
   onPuntos,
   descripcion,
   onDescripcion,
-  onGuardar,
+  estado,
+  onGuardarBorrador,
+  onProgramar,
   onLimpiar,
   hasReto,
   loading,
 }: ProximoRetoManagementSectionProps) {
+  const estadoLabel = {
+    "sin-reto": "Sin reto",
+    borrador: "Borrador",
+    programado: "Programado",
+    aplicado: "Aplicado",
+  }[estado];
+
   return (
     <PageSection title="Reto de la proxima semana">
-      <p className="small-text">
-        Si lo configuras aqui, se agregara automaticamente a la proxima asistencia creada. Es opcional.
-      </p>
+      <div className="stack-sm">
+        <p className="small-text">
+          Flujo por etapas: 1) Guardar borrador, 2) Programar reto, 3) Se aplica automaticamente al crear la proxima asistencia.
+        </p>
+        <p className="small-text">Estado actual: <strong>{estadoLabel}</strong></p>
+      </div>
 
       <div className="stack-sm">
         <input
@@ -46,11 +58,12 @@ export default function ProximoRetoManagementSection({
       </div>
 
       <div className="table-actions">
-        <Button onClick={onGuardar} disabled={loading}>Guardar reto semanal</Button>
+        <Button variant="secondary" onClick={onGuardarBorrador} disabled={loading}>Guardar borrador</Button>
+        <Button onClick={onProgramar} disabled={loading}>Programar reto semanal</Button>
         <Button variant="secondary" onClick={onLimpiar} disabled={loading}>Quitar reto semanal</Button>
       </div>
 
-      <p className="small-text">Estado actual: {hasReto ? "Activo" : "Sin reto programado"}</p>
+      <p className="small-text">Estado contenido: {hasReto ? "Con contenido" : "Vacio"}</p>
     </PageSection>
   );
 }

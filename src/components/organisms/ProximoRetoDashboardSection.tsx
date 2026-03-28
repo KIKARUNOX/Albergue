@@ -8,6 +8,8 @@ type ProximoRetoDoc = {
   puntos?: number;
   descripcion?: string;
   activo?: boolean;
+  estado?: "sin-reto" | "borrador" | "programado" | "aplicado";
+  ultimaAplicacionFecha?: string;
 };
 
 export default function ProximoRetoDashboardSection() {
@@ -28,8 +30,8 @@ export default function ProximoRetoDashboardSection() {
 
         const data = snap.data() as ProximoRetoDoc;
         const nombre = (data.nombre ?? "").trim();
-        const activo = Boolean(data.activo);
-        if (!activo || !nombre) {
+        const estado = data.estado ?? (data.activo ? "programado" : "sin-reto");
+        if (!nombre || estado === "sin-reto") {
           setReto(null);
           return;
         }
@@ -38,7 +40,9 @@ export default function ProximoRetoDashboardSection() {
           nombre,
           puntos: Number(data.puntos ?? 0),
           descripcion: data.descripcion ?? "",
-          activo,
+          activo: Boolean(data.activo),
+          estado,
+          ultimaAplicacionFecha: data.ultimaAplicacionFecha,
         });
       })
       .catch((err: unknown) => {
@@ -64,6 +68,9 @@ export default function ProximoRetoDashboardSection() {
         <div className="stack-sm">
           <p><strong>{reto.nombre}</strong> (+{reto.puntos ?? 0} pts)</p>
           {reto.descripcion?.trim() ? <p className="small-text reto-descripcion">{reto.descripcion}</p> : null}
+          {reto.estado === "aplicado" && reto.ultimaAplicacionFecha ? (
+            <p className="small-text">Aplicado en asistencia: {reto.ultimaAplicacionFecha}</p>
+          ) : null}
         </div>
       ) : null}
     </PageSection>

@@ -6,7 +6,7 @@ import ProximoRetoDashboardSection from "../organisms/ProximoRetoDashboardSectio
 export default function DashboardPage() {
   return (
     <div className="page-stack">
-      <h1>Dashboard</h1>
+      <h1>Inicio</h1>
       <NextSaturdaySection />
       <ProximoRetoDashboardSection />
       <CalendarSection onlyCurrentMonth />

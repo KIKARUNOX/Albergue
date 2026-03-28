@@ -5,7 +5,7 @@ export default function AppNavigation({ permisos }: AppNavigationProps) {
   return (
     <nav className="app-nav" aria-label="Secciones principales">
       <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-        Dashboard
+        Inicio
       </NavLink>
       {permisos.personas ? (
         <NavLink to="/personas" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>

@@ -7,6 +7,7 @@ import type { Asistencia, AsistenciaDoc, Persona } from "../type/asistencia";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const RETO_PROXIMA_SEMANA_DOC = doc(db, "configuracion", "retoProximaSemana");
+type ProximoRetoEstado = "sin-reto" | "borrador" | "programado" | "aplicado";
 
 export default function useAsistenciaPage() {
   const [asistencias, setAsistencias] = useState<Asistencia[]>([]);
@@ -25,6 +26,7 @@ export default function useAsistenciaPage() {
   const [proximoRetoNombre, setProximoRetoNombre] = useState("");
   const [proximoRetoPuntos, setProximoRetoPuntos] = useState(10);
   const [proximoRetoDescripcion, setProximoRetoDescripcion] = useState("");
+  const [proximoRetoEstado, setProximoRetoEstado] = useState<ProximoRetoEstado>("sin-reto");
   const [savingProximoReto, setSavingProximoReto] = useState(false);
 
   const nombreCompleto = useCallback(
@@ -98,6 +100,7 @@ export default function useAsistenciaPage() {
         setProximoRetoNombre("");
         setProximoRetoPuntos(10);
         setProximoRetoDescripcion("");
+        setProximoRetoEstado("sin-reto");
         return;
       }
 
@@ -106,18 +109,23 @@ export default function useAsistenciaPage() {
         nombre?: string;
         puntos?: number;
         descripcion?: string;
+        estado?: ProximoRetoEstado;
       };
 
-      if (!data.activo || !(data.nombre ?? "").trim()) {
+      const estado = data.estado ?? (data.activo ? "programado" : "sin-reto");
+
+      if (!(data.nombre ?? "").trim()) {
         setProximoRetoNombre("");
         setProximoRetoPuntos(10);
         setProximoRetoDescripcion("");
+        setProximoRetoEstado("sin-reto");
         return;
       }
 
       setProximoRetoNombre((data.nombre ?? "").trim());
       setProximoRetoPuntos(Math.max(1, Math.floor(Number(data.puntos ?? 10))));
       setProximoRetoDescripcion(data.descripcion ?? "");
+      setProximoRetoEstado(estado);
     } catch (err) {
       console.error("Error al cargar reto de la proxima semana:", err);
       setMensaje("Error al cargar reto semanal.");
@@ -156,7 +164,7 @@ export default function useAsistenciaPage() {
     [proximoRetoNombre],
   );
 
-  const guardarProximoReto = useCallback(async (): Promise<boolean> => {
+  const ensureRetoBaseValido = async (): Promise<{ nombre: string; descripcion: string; puntos: number } | null> => {
     const nombre = proximoRetoNombre.trim();
     const descripcion = proximoRetoDescripcion;
     const puntos = Math.max(1, Math.floor(Number(proximoRetoPuntos) || 1));
@@ -165,10 +173,60 @@ export default function useAsistenciaPage() {
       await Swal.fire({
         icon: "warning",
         title: "Nombre requerido",
-        text: "Escribe el nombre del reto semanal o usa 'Quitar reto semanal'.",
+        text: "Escribe el nombre del reto semanal.",
+      });
+      return null;
+    }
+
+    return { nombre, descripcion, puntos };
+  };
+
+  const guardarBorradorProximoReto = useCallback(async (): Promise<boolean> => {
+    const payload = await ensureRetoBaseValido();
+    if (!payload) return false;
+
+    try {
+      setSavingProximoReto(true);
+      await setDoc(
+        RETO_PROXIMA_SEMANA_DOC,
+        {
+          activo: false,
+          estado: "borrador",
+          nombre: payload.nombre,
+          puntos: payload.puntos,
+          descripcion: payload.descripcion,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+
+      setProximoRetoNombre(payload.nombre);
+      setProximoRetoPuntos(payload.puntos);
+      setProximoRetoEstado("borrador");
+      setMensaje("Borrador de reto guardado.");
+      await Swal.fire({
+        icon: "success",
+        title: "Borrador guardado",
+        text: "Cuando lo programes, se aplicara automaticamente en la proxima asistencia.",
+      });
+      return true;
+    } catch (err) {
+      console.error("Error al guardar borrador de reto:", err);
+      setMensaje("Error al guardar borrador de reto.");
+      await Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo guardar el borrador del reto.",
       });
       return false;
+    } finally {
+      setSavingProximoReto(false);
     }
+  }, [proximoRetoDescripcion, proximoRetoNombre, proximoRetoPuntos]);
+
+  const programarProximoReto = useCallback(async (): Promise<boolean> => {
+    const payload = await ensureRetoBaseValido();
+    if (!payload) return false;
 
     try {
       setSavingProximoReto(true);
@@ -176,30 +234,32 @@ export default function useAsistenciaPage() {
         RETO_PROXIMA_SEMANA_DOC,
         {
           activo: true,
-          nombre,
-          puntos,
-          descripcion,
+          estado: "programado",
+          nombre: payload.nombre,
+          puntos: payload.puntos,
+          descripcion: payload.descripcion,
           updatedAt: serverTimestamp(),
         },
         { merge: true },
       );
 
-      setProximoRetoNombre(nombre);
-      setProximoRetoPuntos(puntos);
-      setMensaje("Reto semanal guardado.");
+      setProximoRetoNombre(payload.nombre);
+      setProximoRetoPuntos(payload.puntos);
+      setProximoRetoEstado("programado");
+      setMensaje("Reto semanal programado.");
       await Swal.fire({
         icon: "success",
-        title: "Reto semanal guardado",
+        title: "Reto programado",
         text: "Se aplicara automaticamente en la proxima asistencia creada.",
       });
       return true;
     } catch (err) {
-      console.error("Error al guardar reto semanal:", err);
-      setMensaje("Error al guardar reto semanal.");
+      console.error("Error al programar reto semanal:", err);
+      setMensaje("Error al programar reto semanal.");
       await Swal.fire({
         icon: "error",
         title: "Error",
-        text: "No se pudo guardar el reto semanal.",
+        text: "No se pudo programar el reto semanal.",
       });
       return false;
     } finally {
@@ -214,6 +274,7 @@ export default function useAsistenciaPage() {
         RETO_PROXIMA_SEMANA_DOC,
         {
           activo: false,
+          estado: "sin-reto",
           nombre: "",
           puntos: 10,
           descripcion: "",
@@ -225,6 +286,7 @@ export default function useAsistenciaPage() {
       setProximoRetoNombre("");
       setProximoRetoPuntos(10);
       setProximoRetoDescripcion("");
+      setProximoRetoEstado("sin-reto");
       setMensaje("Reto semanal eliminado.");
       await Swal.fire({
         icon: "success",
@@ -278,7 +340,7 @@ export default function useAsistenciaPage() {
     try {
       setMensaje("");
       const nombreRetoSemanal = proximoRetoNombre.trim();
-      const tieneRetoSemanal = Boolean(nombreRetoSemanal);
+      const tieneRetoSemanal = Boolean(nombreRetoSemanal) && proximoRetoEstado === "programado";
       const puntosRetoSemanal = Math.max(1, Math.floor(Number(proximoRetoPuntos) || 1));
 
       await addDoc(collection(db, "asistencias"), {
@@ -302,16 +364,13 @@ export default function useAsistenciaPage() {
           RETO_PROXIMA_SEMANA_DOC,
           {
             activo: false,
-            nombre: "",
-            puntos: 10,
-            descripcion: "",
+            estado: "aplicado",
+            ultimaAplicacionFecha: newFecha,
             updatedAt: serverTimestamp(),
           },
           { merge: true },
         );
-        setProximoRetoNombre("");
-        setProximoRetoPuntos(10);
-        setProximoRetoDescripcion("");
+        setProximoRetoEstado("aplicado");
       }
 
       setNewFecha("2026-03-07");
@@ -605,9 +664,12 @@ export default function useAsistenciaPage() {
     setProximoRetoPuntos,
     proximoRetoDescripcion,
     setProximoRetoDescripcion,
+    proximoRetoEstado,
+    setProximoRetoEstado,
     hasProximoReto,
     savingProximoReto,
-    guardarProximoReto,
+    guardarBorradorProximoReto,
+    programarProximoReto,
     limpiarProximoReto,
     crearAsistencia,
     agregarReto,

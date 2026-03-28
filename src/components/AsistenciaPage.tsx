@@ -44,9 +44,11 @@ export default function AsistenciaPage() {
     setProximoRetoPuntos,
     proximoRetoDescripcion,
     setProximoRetoDescripcion,
+    proximoRetoEstado,
     hasProximoReto,
     savingProximoReto,
-    guardarProximoReto,
+    guardarBorradorProximoReto,
+    programarProximoReto,
     limpiarProximoReto,
     crearAsistencia,
     agregarReto,
@@ -74,8 +76,12 @@ export default function AsistenciaPage() {
         onPuntos={setProximoRetoPuntos}
         descripcion={proximoRetoDescripcion}
         onDescripcion={setProximoRetoDescripcion}
-        onGuardar={() => {
-          void guardarProximoReto();
+        estado={proximoRetoEstado}
+        onGuardarBorrador={() => {
+          void guardarBorradorProximoReto();
+        }}
+        onProgramar={() => {
+          void programarProximoReto();
         }}
         onLimpiar={() => {
           void limpiarProximoReto();

@@ -100,7 +100,9 @@ export type ProximoRetoManagementSectionProps = {
   onPuntos: (value: number) => void;
   descripcion: string;
   onDescripcion: (value: string) => void;
-  onGuardar: () => void;
+  estado: "sin-reto" | "borrador" | "programado" | "aplicado";
+  onGuardarBorrador: () => void;
+  onProgramar: () => void;
   onLimpiar: () => void;
   hasReto: boolean;
   loading: boolean;
