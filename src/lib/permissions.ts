@@ -8,6 +8,20 @@ const BASE_PERMISOS: PersonaPermisos = {
   gestionarPermisos: false,
 };
 
+export function normalizeRole(rawRole?: string): PersonaRole {
+  const role = rawRole?.trim().toLowerCase();
+
+  if (role === "coordinador" || role === "cordinador") {
+    return "coordinador";
+  }
+
+  if (role === "lider") {
+    return "lider";
+  }
+
+  return "joven";
+}
+
 export function defaultPermisosByRole(role: PersonaRole): PersonaPermisos {
   if (role === "joven") {
     return { ...BASE_PERMISOS };
@@ -22,17 +36,21 @@ export function defaultPermisosByRole(role: PersonaRole): PersonaPermisos {
     };
   }
 
-  return {
-    ...BASE_PERMISOS,
-    asistencias: true,
-    personas: true,
-    importacion: true,
-    gestionarPermisos: true,
-  };
+  if (role === "lider") {
+    return {
+      ...BASE_PERMISOS,
+      asistencias: true,
+      personas: true,
+      importacion: true,
+      gestionarPermisos: true,
+    };
+  }
+
+  return { ...BASE_PERMISOS };
 }
 
 export function buildPermisos(persona?: PersonaDetalle | null): PersonaPermisos {
-  const role: PersonaRole = persona?.role ?? "coordinador";
+  const role = normalizeRole(persona?.role);
   return {
     ...defaultPermisosByRole(role),
     ...(persona?.permisos ?? {}),

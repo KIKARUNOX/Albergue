@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { collection, addDoc, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc } from "firebase/firestore";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { defaultPermisosByRole } from "../lib/permissions";
@@ -50,6 +50,71 @@ export default function Signup() {
   const [state, dispatch] = useReducer(signupReducer, initialState);
   const navigate = useNavigate();
 
+  const linkPersonaOnServer = async (payload: {
+    uid: string;
+    email: string;
+    nombre: string;
+    apellido1: string;
+    apellido2: string;
+    idToken: string;
+  }): Promise<{ status: "linked" | "no_match" | "conflict"; reason?: string; email?: string }> => {
+    let response: Response;
+    try {
+      response = await fetch("/api/link-persona", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${payload.idToken}`,
+        },
+        body: JSON.stringify({
+          uid: payload.uid,
+          email: payload.email,
+          nombre: payload.nombre,
+          apellido1: payload.apellido1,
+          apellido2: payload.apellido2,
+        }),
+      });
+    } catch {
+      // Si el endpoint no esta disponible (p.ej. dev sin functions), continuar con alta local.
+      return { status: "no_match" };
+    }
+
+    const raw = await response.text();
+    let parsed: unknown = {};
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = {};
+      }
+    }
+
+    const data = parsed as {
+      status?: "linked" | "no_match" | "conflict";
+      reason?: string;
+      email?: string;
+      error?: string;
+    };
+
+    if (!response.ok && (response.status === 404 || response.status === 405)) {
+      return { status: "no_match" };
+    }
+
+    if (!response.ok && data.status !== "conflict") {
+      throw new Error(data.error || `No se pudo vincular la persona en el servidor (HTTP ${response.status}).`);
+    }
+
+    if (data.status === "linked" || data.status === "no_match" || data.status === "conflict") {
+      return {
+        status: data.status,
+        reason: data.reason,
+        email: data.email,
+      };
+    }
+
+    throw new Error("Respuesta invalida del servidor al vincular persona.");
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     dispatch({ type: "setError", value: "" });
@@ -88,71 +153,31 @@ export default function Signup() {
     dispatch({ type: "setLoading", value: true });
 
     try {
-      // Buscar si ya existe una persona con ese nombre y apellido
-      const q = query(
-        collection(db, "personas"),
-        where("nombre", "==", nombre),
-        where("apellido1", "==", apellido1)
-      );
-      const querySnapshot = await getDocs(q);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+      const idToken = await userCredential.user.getIdToken();
 
-      let personaExistente: any = null;
-      querySnapshot.forEach((docSnapshot) => {
-        const rawData = docSnapshot.data();
-        personaExistente = {
-          nombre: rawData.nombre as string,
-          apellido1: rawData.apellido1,
-          apellido2: rawData.apellido2,
-          email: rawData.email,
-          authUid: rawData.authUid,
-          role: rawData.role,
-          permisos: rawData.permisos,
-          docId: docSnapshot.id,
-        } as any;
+      const linkResult = await linkPersonaOnServer({
+        uid,
+        email,
+        nombre,
+        apellido1,
+        apellido2,
+        idToken,
       });
 
-      if (personaExistente && "docId" in personaExistente) {
-        // Persona ya existe
-        const docId = personaExistente.docId;
-        const emailExistente = personaExistente.email;
-        const role = personaExistente.role;
-        const permisos = personaExistente.permisos;
-
-        if (emailExistente && emailExistente !== email) {
-          await Swal.fire({
-            icon: "error",
-            title: "Ya existe",
-            text: `Existe una persona con ese nombre pero con email diferente: ${emailExistente}`,
-          });
-          dispatch({ type: "setLoading", value: false });
-          return;
+      if (linkResult.status === "conflict") {
+        if (linkResult.reason === "email_mismatch" && linkResult.email) {
+          throw new Error(`Existe una persona con ese nombre y apellidos, pero con otro email: ${linkResult.email}`);
         }
+        if (linkResult.reason === "multiple_matches") {
+          throw new Error("Hay varias personas con ese nombre y apellidos. Contacta a un coordinador para vincular tu cuenta.");
+        }
+        throw new Error("Esa persona ya esta vinculada a otra cuenta.");
+      }
 
-        // Persona existe sin email o con el mismo email - actualizar
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const uid = userCredential.user.uid;
-
-        // Actualizar la persona existente con authUid y email
-        const personaRef = doc(db, "personas", docId);
-        await updateDoc(personaRef, {
-          authUid: uid,
-          email,
-          role: role || "joven",
-          permisos: permisos || defaultPermisosByRole("joven"),
-        });
-
-        await Swal.fire({
-          icon: "success",
-          title: "Registro exitoso",
-          text: "Tu cuenta se vinculó correctamente.",
-        });
-        navigate("/");
-      } else {
-        // Nueva persona - crear desde cero
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const uid = userCredential.user.uid;
-
-        // Guardar datos en Firestore
+      if (linkResult.status === "no_match") {
+        // Si no hay match en backend, se crea una nueva persona para este usuario.
         await addDoc(collection(db, "personas"), {
           id: uid,
           authUid: uid,
@@ -166,14 +191,16 @@ export default function Signup() {
           bautizado: false,
           createdAt: new Date(),
         });
-
-        await Swal.fire({
-          icon: "success",
-          title: "Registro exitoso",
-          text: "La cuenta se creo correctamente.",
-        });
-        navigate("/");
       }
+
+      await Swal.fire({
+        icon: "success",
+        title: "Registro exitoso",
+        text: linkResult.status === "linked"
+          ? "Tu cuenta se vinculo con una persona existente."
+          : "La cuenta se creo correctamente.",
+      });
+      navigate("/");
     } catch (err: unknown) {
       if (err instanceof Error) {
         await Swal.fire({ icon: "error", title: "Error al registrarse", text: err.message });

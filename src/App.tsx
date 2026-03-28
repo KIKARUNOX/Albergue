@@ -15,7 +15,7 @@ import AppHeader from "./components/organisms/AppHeader";
 import AppNavigation from "./components/organisms/AppNavigation";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { db } from "./firebase";
 import { buildPermisos } from "./lib/permissions";
 import type { PersonaDetalle } from "./type/persona";
@@ -50,6 +50,23 @@ function App() {
           let docFound: PersonaDetalle | null = null;
           let docId = "";
 
+          const syncPersonaUid = async (personaDocId: string, firebaseUser: User, currentData?: Partial<PersonaDetalle>) => {
+            const normalizedEmail = firebaseUser.email?.toLowerCase();
+            const shouldUpdateAuthUid = currentData?.authUid !== firebaseUser.uid;
+            const shouldUpdateLegacyId = currentData?.id !== firebaseUser.uid;
+            const shouldUpdateEmail = Boolean(normalizedEmail && currentData?.email !== normalizedEmail);
+
+            if (!shouldUpdateAuthUid && !shouldUpdateLegacyId && !shouldUpdateEmail) {
+              return;
+            }
+
+            await updateDoc(doc(db, "personas", personaDocId), {
+              authUid: firebaseUser.uid,
+              id: firebaseUser.uid,
+              ...(normalizedEmail ? { email: normalizedEmail } : {}),
+            });
+          };
+
           const byAuthUid = await getDocs(query(personasRef, where("authUid", "==", u.uid)));
           if (!byAuthUid.empty) {
             const match = byAuthUid.docs[0];
@@ -63,6 +80,13 @@ function App() {
               const match = byEmail.docs[0];
               docFound = { id: match.id, ...match.data() } as PersonaDetalle;
               docId = match.id;
+              await syncPersonaUid(docId, u, docFound);
+              docFound = {
+                ...docFound,
+                authUid: u.uid,
+                id: u.uid,
+                email: u.email.toLowerCase(),
+              } as PersonaDetalle;
             }
           }
 
@@ -72,6 +96,12 @@ function App() {
               const match = byLegacyId.docs[0];
               docFound = { id: match.id, ...match.data() } as PersonaDetalle;
               docId = match.id;
+              await syncPersonaUid(docId, u, docFound);
+              docFound = {
+                ...docFound,
+                authUid: u.uid,
+                ...(u.email ? { email: u.email.toLowerCase() } : {}),
+              } as PersonaDetalle;
             }
           }
 

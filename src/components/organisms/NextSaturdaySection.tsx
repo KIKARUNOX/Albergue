@@ -8,6 +8,7 @@ export default function NextSaturdaySection() {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [loading, setLoading] = useState(true);
   const [intentosPorImagen, setIntentosPorImagen] = useState<Record<number, number>>({});
+  const [imagenesFallidas, setImagenesFallidas] = useState<Record<number, boolean>>({});
 
   const extraerDriveId = (url: string): string | null => {
     try {
@@ -19,7 +20,10 @@ export default function NextSaturdaySection() {
     }
 
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    return match?.[1] ?? null;
+    if (match?.[1]) return match[1];
+
+    const openMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
+    return openMatch?.[1] ?? null;
   };
 
   const construirCandidatas = (url: string): string[] => {
@@ -27,8 +31,10 @@ export default function NextSaturdaySection() {
     if (!driveId) return [url];
 
     return [
+      `https://drive.usercontent.google.com/download?id=${driveId}&export=view`,
       `https://drive.google.com/thumbnail?id=${driveId}&sz=w2000`,
       `https://lh3.googleusercontent.com/d/${driveId}=w2000`,
+      `https://drive.google.com/uc?export=download&id=${driveId}`,
       `https://drive.google.com/uc?export=view&id=${driveId}`,
       `https://drive.google.com/uc?id=${driveId}`,
     ];
@@ -116,20 +122,29 @@ export default function NextSaturdaySection() {
                 const candidatas = construirCandidatas(imagen);
                 const intentoActual = intentosPorImagen[index] ?? 0;
                 const srcActual = candidatas[Math.min(intentoActual, candidatas.length - 1)];
+                const fallida = Boolean(imagenesFallidas[index]);
 
                 return (
-              <img
-                src={srcActual}
-                alt={`Evento ${evento.titulo} - Imagen ${index + 1}`}
-                className="evento-imagen"
-                onError={() => {
-                  setIntentosPorImagen((prev) => {
-                    const siguiente = (prev[index] ?? 0) + 1;
-                    if (siguiente >= candidatas.length) return prev;
-                    return { ...prev, [index]: siguiente };
-                  });
-                }}
-              />
+                  fallida
+                    ? <p className="no-evento">No se pudo cargar la imagen (Drive requiere enlace publico).</p>
+                    : (
+                      <img
+                        src={srcActual}
+                        alt={`Evento ${evento.titulo} - Imagen ${index + 1}`}
+                        className="evento-imagen"
+                        referrerPolicy="no-referrer"
+                        onError={() => {
+                          setIntentosPorImagen((prev) => {
+                            const siguiente = (prev[index] ?? 0) + 1;
+                            if (siguiente >= candidatas.length) {
+                              setImagenesFallidas((prevFail) => ({ ...prevFail, [index]: true }));
+                              return prev;
+                            }
+                            return { ...prev, [index]: siguiente };
+                          });
+                        }}
+                      />
+                    )
                 );
               })()}
             </div>
