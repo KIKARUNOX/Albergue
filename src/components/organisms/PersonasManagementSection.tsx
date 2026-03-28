@@ -54,7 +54,7 @@ const initialUiState: PersonasManagementUiState = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^[0-9+()\-\s]{7,20}$/;
+const PHONE_PATTERN = /^[0-9+()\s-]{7,20}$/;
 
 const validarPersonaForm = (form: PersonaForm): string | null => {
   if (!form.nombre.trim()) {
@@ -379,7 +379,7 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
           <input placeholder="Primer apellido" value={ui.createForm.apellido1} onChange={(e) => createField("apellido1", e.target.value)} />
           <input placeholder="Segundo apellido" value={ui.createForm.apellido2} onChange={(e) => createField("apellido2", e.target.value)} />
           <input type="email" placeholder="Correo" value={ui.createForm.email} onChange={(e) => createField("email", e.target.value)} />
-          <input type="tel" pattern="[0-9+()\-\s]{7,20}" placeholder="Telefono" value={ui.createForm.telefono} onChange={(e) => createField("telefono", e.target.value)} />
+          <input type="tel" pattern="[0-9+()\s-]{7,20}" placeholder="Telefono" value={ui.createForm.telefono} onChange={(e) => createField("telefono", e.target.value)} />
           <input placeholder="Localidad" value={ui.createForm.localidad} onChange={(e) => createField("localidad", e.target.value)} />
           <label>
             Fecha de nacimiento
@@ -433,7 +433,7 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
                 <input placeholder="Primer apellido" value={ui.editForm.apellido1} onChange={(e) => editField("apellido1", e.target.value)} />
                 <input placeholder="Segundo apellido" value={ui.editForm.apellido2} onChange={(e) => editField("apellido2", e.target.value)} />
                 <input type="email" placeholder="Correo" value={ui.editForm.email} onChange={(e) => editField("email", e.target.value)} />
-                <input type="tel" pattern="[0-9+()\-\s]{7,20}" placeholder="Telefono" value={ui.editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
+                <input type="tel" pattern="[0-9+()\s-]{7,20}" placeholder="Telefono" value={ui.editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
                 <input placeholder="Localidad" value={ui.editForm.localidad} onChange={(e) => editField("localidad", e.target.value)} />
                 <label>
                   Fecha de nacimiento

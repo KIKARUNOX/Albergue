@@ -87,6 +87,12 @@ export type AsistenciasListSectionProps = {
   onViewDetails: (id: string) => void;
 };
 
+export type InasistentesSectionProps = {
+  asistencias: Asistencia[];
+  personas: Persona[];
+  threshold?: number;
+};
+
 export type ExcelRow = Record<string, unknown>;
 
 export type RegistrarPersonaFormData = {

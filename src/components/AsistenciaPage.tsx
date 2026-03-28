@@ -6,6 +6,7 @@ import PersonCheckboxGrid from "./molecules/PersonCheckboxGrid";
 import AsistenciaCreationSection from "./organisms/AsistenciaCreationSection";
 import RetoSection from "./organisms/RetoSection";
 import AsistenciasListSection from "./organisms/AsistenciasListSection";
+import InasistentesSection from "./organisms/InasistentesSection";
 import useAsistenciaPage from "../hooks/useAsistenciaPage";
 
 export default function AsistenciaPage() {
@@ -134,6 +135,8 @@ export default function AsistenciaPage() {
           setShowDetailsModal(true);
         }}
       />
+
+      <InasistentesSection asistencias={asistencias} personas={personas} threshold={3} />
 
       {/* Modal para ver detalles de asistencia */}
       <Modal

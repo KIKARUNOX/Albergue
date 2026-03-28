@@ -15,9 +15,9 @@ import AppHeader from "./components/organisms/AppHeader";
 import AppNavigation from "./components/organisms/AppNavigation";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { collection, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { collection, doc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import { db } from "./firebase";
-import { buildPermisos } from "./lib/permissions";
+import { buildPermisos, defaultPermisosByRole, normalizeRole } from "./lib/permissions";
 import type { PersonaDetalle } from "./type/persona";
 
 function App() {
@@ -49,6 +49,29 @@ function App() {
           const personasRef = collection(db, "personas");
           let docFound: PersonaDetalle | null = null;
           let docId = "";
+
+          const syncUsuarioAccessDoc = async (firebaseUser: User, personaData: PersonaDetalle | null, personaId: string) => {
+            const normalizedEmail = firebaseUser.email?.toLowerCase() ?? "";
+            const role = normalizeRole(personaData?.role);
+            const permisos = {
+              ...defaultPermisosByRole(role),
+              ...(personaData?.permisos ?? {}),
+            };
+
+            await setDoc(
+              doc(db, "usuarios", firebaseUser.uid),
+              {
+                uid: firebaseUser.uid,
+                authUid: firebaseUser.uid,
+                email: normalizedEmail,
+                role,
+                permisos,
+                personaId,
+                updatedAt: new Date(),
+              },
+              { merge: true }
+            );
+          };
 
           const syncPersonaUid = async (personaDocId: string, firebaseUser: User, currentData?: Partial<PersonaDetalle>) => {
             const normalizedEmail = firebaseUser.email?.toLowerCase();
@@ -104,6 +127,8 @@ function App() {
               } as PersonaDetalle;
             }
           }
+
+          await syncUsuarioAccessDoc(u, docFound, docId);
 
           setPersona(docFound);
           setPersonaDocId(docId);

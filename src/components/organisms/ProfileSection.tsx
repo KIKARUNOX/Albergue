@@ -7,7 +7,7 @@ import Button from "../atoms/Button";
 import PageSection from "../templates/PageSection";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^[0-9+()\-\s]{7,20}$/;
+const PHONE_PATTERN = /^[0-9+()\s-]{7,20}$/;
 
 export default function ProfileSection({ personaId, persona }: ProfileSectionProps) {
   const [nombre, setNombre] = useState(persona.nombre ?? "");
@@ -71,7 +71,7 @@ export default function ProfileSection({ personaId, persona }: ProfileSectionPro
         <input type="text" placeholder="Primer apellido" value={apellido1} onChange={(e) => setApellido1(e.target.value)} />
         <input type="text" placeholder="Segundo apellido" value={apellido2} onChange={(e) => setApellido2(e.target.value)} />
         <input type="email" placeholder="Correo" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input type="tel" pattern="[0-9+()\-\s]{7,20}" placeholder="Telefono" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+        <input type="tel" pattern="[0-9+()\s-]{7,20}" placeholder="Telefono" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
         <input type="text" placeholder="Localidad" value={localidad} onChange={(e) => setLocalidad(e.target.value)} />
         <label>
           Fecha de nacimiento
