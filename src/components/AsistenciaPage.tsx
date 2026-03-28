@@ -13,6 +13,7 @@ import useAsistenciaPage from "../hooks/useAsistenciaPage";
 export default function AsistenciaPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRetoModal, setShowRetoModal] = useState(false);
+  const [showProximoRetoModal, setShowProximoRetoModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAsistenciaForDetails, setSelectedAsistenciaForDetails] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -63,6 +64,13 @@ export default function AsistenciaPage() {
     ordenarIdsPorNombre,
   } = useAsistenciaPage();
 
+  const estadoRetoLabel = {
+    "sin-reto": "Sin reto",
+    borrador: "Borrador",
+    programado: "Programado",
+    aplicado: "Aplicado",
+  }[proximoRetoEstado];
+
   return (
     <div className="stack-md">
       <h1>Gestion de asistencias y retos</h1>
@@ -72,26 +80,45 @@ export default function AsistenciaPage() {
         Agregar asistencia
       </Button>
 
-      <ProximoRetoManagementSection
-        nombre={proximoRetoNombre}
-        onNombre={setProximoRetoNombre}
-        puntos={proximoRetoPuntos}
-        onPuntos={setProximoRetoPuntos}
-        descripcion={proximoRetoDescripcion}
-        onDescripcion={setProximoRetoDescripcion}
-        estado={proximoRetoEstado}
-        onGuardarBorrador={() => {
-          void guardarBorradorProximoReto();
-        }}
-        onProgramar={() => {
-          void programarProximoReto();
-        }}
-        onLimpiar={() => {
-          void limpiarProximoReto();
-        }}
-        hasReto={hasProximoReto}
-        loading={savingProximoReto}
-      />
+      <Button variant="secondary" onClick={() => setShowProximoRetoModal(true)}>
+        Reto de la proxima semana · {estadoRetoLabel}
+      </Button>
+
+      <Modal
+        isOpen={showProximoRetoModal}
+        title="Reto de la proxima semana"
+        onClose={() => setShowProximoRetoModal(false)}
+      >
+        <ProximoRetoManagementSection
+          nombre={proximoRetoNombre}
+          onNombre={setProximoRetoNombre}
+          puntos={proximoRetoPuntos}
+          onPuntos={setProximoRetoPuntos}
+          descripcion={proximoRetoDescripcion}
+          onDescripcion={setProximoRetoDescripcion}
+          estado={proximoRetoEstado}
+          onGuardarBorrador={() => {
+            void (async () => {
+              const ok = await guardarBorradorProximoReto();
+              if (ok) setShowProximoRetoModal(false);
+            })();
+          }}
+          onProgramar={() => {
+            void (async () => {
+              const ok = await programarProximoReto();
+              if (ok) setShowProximoRetoModal(false);
+            })();
+          }}
+          onLimpiar={() => {
+            void (async () => {
+              const ok = await limpiarProximoReto();
+              if (ok) setShowProximoRetoModal(false);
+            })();
+          }}
+          hasReto={hasProximoReto}
+          loading={savingProximoReto}
+        />
+      </Modal>
 
       {/* Modal para crear asistencia */}
       <Modal

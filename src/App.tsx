@@ -128,7 +128,11 @@ function App() {
             }
           }
 
-          await syncUsuarioAccessDoc(u, docFound, docId);
+          try {
+            await syncUsuarioAccessDoc(u, docFound, docId);
+          } catch (syncError) {
+            console.error("No se pudo sincronizar usuarios/{uid}:", syncError);
+          }
 
           setPersona(docFound);
           setPersonaDocId(docId);

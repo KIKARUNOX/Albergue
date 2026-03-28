@@ -81,7 +81,13 @@ export default function useAsistenciaPage() {
     [personas],
   );
 
-  const cargarAsistencias = useCallback(async ({ reset = true }: { reset?: boolean } = {}) => {
+  const cargarAsistencias = useCallback(async ({
+    reset = true,
+    cursor = null,
+  }: {
+    reset?: boolean;
+    cursor?: QueryDocumentSnapshot<DocumentData> | null;
+  } = {}) => {
     try {
       if (reset) {
         setLoading(true);
@@ -91,12 +97,13 @@ export default function useAsistenciaPage() {
 
       const asistenciasQuery = reset
         ? query(collection(db, "asistencias"), orderBy("fecha", "desc"), limit(ASISTENCIAS_PAGE_SIZE))
-        : lastAsistenciaDoc
-          ? query(collection(db, "asistencias"), orderBy("fecha", "desc"), limit(ASISTENCIAS_PAGE_SIZE), startAfter(lastAsistenciaDoc))
+        : cursor
+          ? query(collection(db, "asistencias"), orderBy("fecha", "desc"), limit(ASISTENCIAS_PAGE_SIZE), startAfter(cursor))
           : null;
 
       if (!asistenciasQuery) {
         setHasMoreAsistencias(false);
+        if (!reset) setLoadingMoreAsistencias(false);
         return;
       }
 
@@ -125,7 +132,7 @@ export default function useAsistenciaPage() {
         setLoadingMoreAsistencias(false);
       }
     }
-  }, [lastAsistenciaDoc]);
+  }, []);
 
   const cargarPersonas = useCallback(async () => {
     try {
@@ -687,8 +694,8 @@ export default function useAsistenciaPage() {
 
   const cargarMasAsistencias = useCallback(async (): Promise<void> => {
     if (!hasMoreAsistencias || loadingMoreAsistencias) return;
-    await cargarAsistencias({ reset: false });
-  }, [cargarAsistencias, hasMoreAsistencias, loadingMoreAsistencias]);
+    await cargarAsistencias({ reset: false, cursor: lastAsistenciaDoc });
+  }, [cargarAsistencias, hasMoreAsistencias, lastAsistenciaDoc, loadingMoreAsistencias]);
 
   const togglePersonaSeleccionada = useCallback((id: string) => {
     setPersonasSeleccionadas((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
