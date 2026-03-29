@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
-    "deploy:pages": "npm run build && wrangler pages deploy dist --project-name codigo316",
+    "deploy:pages": "npm run build && node -e \"const fs=require('fs');try{fs.rmSync('dist/wrangler.json',{force:true})}catch(e){};try{fs.rmSync('.wrangler/deploy/config.json',{force:true})}catch(e){}\" && wrangler pages deploy dist --project-name codigo316",
     "firebase:functions:build": "npm --prefix firebase-functions run build",
     "firebase:functions:deploy": "npm --prefix firebase-functions run deploy"
   },
