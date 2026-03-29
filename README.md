@@ -62,6 +62,44 @@ npm run dev:pages
 
 Si usas solo `wrangler deploy` en modo Worker de assets, los `POST /api/*` pueden responder 405.
 
+## Frontend Cloudflare + Backend Firebase
+
+Si el frontend se publica en Cloudflare y el backend en Firebase Functions:
+
+1. En Cloudflare (frontend), define `VITE_API_BASE_URL` con la URL base de Firebase Functions.
+2. Redeploy del frontend para que Vite inyecte la variable.
+3. Verifica en Network que las llamadas vayan a Firebase (no a `/api/*` del mismo dominio).
+
+Ejemplos de `VITE_API_BASE_URL`:
+
+- `https://us-central1-codigo316-837bd.cloudfunctions.net` (funciones separadas)
+- `https://us-central1-codigo316-837bd.cloudfunctions.net/api` (una funcion `api` con rutas internas)
+
+Con esta configuracion del repo (funcion unica `api` en Firebase), usa:
+
+- `VITE_API_BASE_URL=https://us-central1-codigo316-837bd.cloudfunctions.net`
+
+Pasos de despliegue del backend Firebase:
+
+```bash
+cd firebase-functions
+npm install
+cd ..
+npm run firebase:functions:deploy
+```
+
+Variables requeridas en Firebase Functions (Runtime config / Environment variables):
+
+- `FIREBASE_PROJECT_ID=codigo316-837bd`
+- `FIREBASE_WEB_API_KEY` (API key web de Firebase)
+- `FIRESTORE_DATABASE_ID=(default)` (opcional)
+- `FIREBASE_SERVICE_ACCOUNT_JSON` (recomendado)
+
+Alternativa:
+
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

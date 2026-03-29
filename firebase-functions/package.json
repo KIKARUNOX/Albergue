@@ -1,0 +1,22 @@
+{
+  "name": "codigo316-firebase-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "type": "module",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "npm run build && firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase-functions": "^6.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

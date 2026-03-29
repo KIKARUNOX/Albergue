@@ -1,0 +1,11 @@
+# Variables para Cloudflare Pages Functions en desarrollo local (wrangler pages dev)
+FIREBASE_PROJECT_ID=codigo316-837bd
+FIREBASE_WEB_API_KEY=
+FIRESTORE_DATABASE_ID=(default)
+
+# Opcion recomendada: pegar el JSON completo de service account como una sola linea
+FIREBASE_SERVICE_ACCOUNT_JSON=
+
+# Alternativa si no usas FIREBASE_SERVICE_ACCOUNT_JSON
+# FIREBASE_CLIENT_EMAIL=
+# FIREBASE_PRIVATE_KEY=
