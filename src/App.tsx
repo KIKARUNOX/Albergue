@@ -158,7 +158,7 @@ function App() {
 
       <main className="page-body">
         <Routes>
-          <Route path="/" element={<ProtectedRoute allow={permisos.dashboard} element={<DashboardPage />} />} />
+          <Route path="/" element={<ProtectedRoute allow={permisos.dashboard} element={<DashboardPage persona={persona} />} />} />
           <Route
             path="/personas"
             element={<ProtectedRoute allow={permisos.personas} element={<PersonasPageView canManagePermissions={permisos.gestionarPermisos} />} />}

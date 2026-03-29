@@ -1,12 +1,30 @@
 import { useState, useEffect } from "react";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  updateDoc,
+  doc,
+  arrayUnion,
+} from "firebase/firestore";
 import { db } from "../../firebase";
-import type { Evento } from "../../type/evento";
+import type { Evento, EventoComentario } from "../../type/evento";
+import type { PersonaDetalle } from "../../type/persona";
 import "./NextSaturdaySection.css";
 
-export default function NextSaturdaySection() {
-  const [evento, setEvento] = useState<Evento | null>(null);
+type NextSaturdaySectionProps = {
+  persona: PersonaDetalle | null;
+};
+
+type EventoWithDocId = Evento & { docId: string };
+
+export default function NextSaturdaySection({ persona }: NextSaturdaySectionProps) {
+  const [evento, setEvento] = useState<EventoWithDocId | null>(null);
   const [loading, setLoading] = useState(true);
+  const [comentario, setComentario] = useState("");
+  const [enviandoComentario, setEnviandoComentario] = useState(false);
+  const [showComentarioModal, setShowComentarioModal] = useState(false);
   const [intentosPorImagen, setIntentosPorImagen] = useState<
     Record<number, number>
   >({});
@@ -59,7 +77,10 @@ export default function NextSaturdaySection() {
 
         // Filtrar solo eventos futuros (no pasados)
         const eventosFuturos = querySnapshot.docs
-          .map((doc) => doc.data() as Evento)
+          .map((doc) => ({
+            docId: doc.id,
+            ...(doc.data() as Evento),
+          }))
           .filter((evento) => evento.fecha >= fechaHoy)
           .sort(
             (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime(),
@@ -78,6 +99,56 @@ export default function NextSaturdaySection() {
 
     obtenerProximoEvento();
   }, []);
+
+  const nombreAutor =
+    `${persona?.nombre ?? ""} ${persona?.apellido1 ?? ""} ${persona?.apellido2 ?? ""}`.trim()
+    || persona?.email
+    || "Usuario";
+
+  const comentariosOrdenados = [...(evento?.comentarios ?? [])].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+
+  const enviarComentario = async () => {
+    if (!evento || !persona?.id) {
+      return;
+    }
+
+    const texto = comentario.trim();
+    if (!texto) {
+      return;
+    }
+
+    const nuevoComentario: EventoComentario = {
+      id: crypto.randomUUID(),
+      autorId: persona.id,
+      autorNombre: nombreAutor,
+      texto,
+      createdAt: new Date().toISOString(),
+    };
+
+    setEnviandoComentario(true);
+    try {
+      const eventoRef = doc(db, "eventos", evento.docId);
+      await updateDoc(eventoRef, {
+        comentarios: arrayUnion(nuevoComentario),
+      });
+
+      setEvento((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comentarios: [...(prev.comentarios ?? []), nuevoComentario],
+        };
+      });
+      setComentario("");
+      setShowComentarioModal(false);
+    } catch (error) {
+      console.error("Error al enviar comentario:", error);
+    } finally {
+      setEnviandoComentario(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -122,6 +193,39 @@ export default function NextSaturdaySection() {
         )}
       </div>
 
+      {showComentarioModal ? (
+        <div className="comentario-modal-overlay" onClick={() => setShowComentarioModal(false)}>
+          <div className="comentario-modal" onClick={(e) => e.stopPropagation()}>
+            <h4>Dejar comentario</h4>
+            <textarea
+              placeholder="Escribe tu comentario..."
+              value={comentario}
+              onChange={(e) => setComentario(e.target.value)}
+              rows={4}
+              maxLength={300}
+            />
+            <div className="comentario-modal-actions">
+              <button
+                className="btn-secondary"
+                type="button"
+                onClick={() => setShowComentarioModal(false)}
+                disabled={enviandoComentario}
+              >
+                Cancelar
+              </button>
+              <button
+                className="btn-primary"
+                type="button"
+                onClick={() => void enviarComentario()}
+                disabled={enviandoComentario || !comentario.trim()}
+              >
+                {enviandoComentario ? "Enviando..." : "Publicar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {evento.imagenes && evento.imagenes.length > 0 && (
         <div className="imagenes-grid">
           {evento.imagenes.map((imagen, index) => (
@@ -163,6 +267,41 @@ export default function NextSaturdaySection() {
           ))}
         </div>
       )}
+
+      <div className="evento-comentarios">
+        <h4>Comentarios</h4>
+
+        {persona?.id ? (
+          <div className="comentario-actions">
+            <button
+              className="btn-primary"
+              type="button"
+              onClick={() => setShowComentarioModal(true)}
+            >
+              Dejar comentario
+            </button>
+          </div>
+        ) : (
+          <p className="no-evento">Inicia sesión para comentar.</p>
+        )}
+
+        {comentariosOrdenados.length === 0 ? (
+          <p className="no-evento">Aún no hay comentarios.</p>
+        ) : (
+          <ul className="comentarios-list">
+            {comentariosOrdenados.map((item) => (
+              <li key={item.id} className="comentario-item">
+                <p className="comentario-meta">
+                  <strong>{item.autorNombre}</strong>
+                  {" · "}
+                  {new Date(item.createdAt).toLocaleString("es-ES")}
+                </p>
+                <p className="comentario-texto">{item.texto}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   );
 }
