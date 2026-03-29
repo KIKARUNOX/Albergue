@@ -140,11 +140,6 @@ async function queryPersonaByField(
   return docs[0] ?? null;
 }
 
-function getStringField(doc: FirestoreDoc, field: string): string {
-  const raw = fromFirestoreValue(doc.fields?.[field]);
-  return typeof raw === "string" ? raw : "";
-}
-
 function personaFromDoc(doc: FirestoreDoc): Record<string, unknown> {
   const fields = Object.entries(doc.fields ?? {}).map(([key, value]) => [key, fromFirestoreValue(value)]);
   return Object.fromEntries(fields);
