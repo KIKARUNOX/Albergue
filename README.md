@@ -22,7 +22,6 @@ Variables esperadas:
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
 - `VITE_FIRESTORE_DATABASE_ID` (opcional)
-- `VITE_API_BASE_URL` (opcional, para frontend en Cloudflare con backend externo; ejemplo: `https://us-central1-TU_PROYECTO.cloudfunctions.net`)
 
 Variables de servidor (Cloudflare Functions) para acceso seguro con Service Account:
 
@@ -64,20 +63,13 @@ Si usas solo `wrangler deploy` en modo Worker de assets, los `POST /api/*` puede
 
 ## Frontend Cloudflare + Backend Firebase
 
-Si el frontend se publica en Cloudflare y el backend en Firebase Functions:
+En esta configuracion, el frontend siempre llama a rutas same-origin (`/api/*`) y Cloudflare Functions actua como backend.
 
-1. En Cloudflare (frontend), define `VITE_API_BASE_URL` con la URL base de Firebase Functions.
-2. Redeploy del frontend para que Vite inyecte la variable.
-3. Verifica en Network que las llamadas vayan a Firebase (no a `/api/*` del mismo dominio).
+1. Frontend -> `POST /api/*` (mismo dominio Cloudflare).
+2. Cloudflare Functions -> Firebase Auth + Firestore REST (server-to-server).
+3. No exponer credenciales ni llamar Firestore directo desde navegador.
 
-Ejemplos de `VITE_API_BASE_URL`:
-
-- `https://us-central1-codigo316-837bd.cloudfunctions.net` (funciones separadas)
-- `https://us-central1-codigo316-837bd.cloudfunctions.net/api` (una funcion `api` con rutas internas)
-
-Con esta configuracion del repo (funcion unica `api` en Firebase), usa:
-
-- `VITE_API_BASE_URL=https://us-central1-codigo316-837bd.cloudfunctions.net`
+No se usa `VITE_API_BASE_URL` en este flujo.
 
 Pasos de despliegue del backend Firebase:
 
