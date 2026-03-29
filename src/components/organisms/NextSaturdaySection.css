@@ -113,6 +113,18 @@
   background: #fff;
 }
 
+.comentario-edit-box textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.comentario-actions-row {
+  margin-top: 0.6rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .comentario-meta {
   margin: 0 0 0.35rem;
   color: var(--muted);

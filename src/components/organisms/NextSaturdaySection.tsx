@@ -25,6 +25,10 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
   const [comentario, setComentario] = useState("");
   const [enviandoComentario, setEnviandoComentario] = useState(false);
   const [showComentarioModal, setShowComentarioModal] = useState(false);
+  const [editingComentarioId, setEditingComentarioId] = useState<string | null>(null);
+  const [editingTexto, setEditingTexto] = useState("");
+  const [savingEdicion, setSavingEdicion] = useState(false);
+  const [deletingComentarioId, setDeletingComentarioId] = useState<string | null>(null);
   const [intentosPorImagen, setIntentosPorImagen] = useState<
     Record<number, number>
   >({});
@@ -109,6 +113,11 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
+  const normalizedRole = (persona?.role ?? "joven").trim().toLowerCase();
+  const canModerateComments =
+    (normalizedRole === "lider" || normalizedRole === "coordinador" || normalizedRole === "cordinador")
+    && Boolean(persona?.permisos?.gestionarPermisos);
+
   const enviarComentario = async () => {
     if (!evento || !persona?.id) {
       return;
@@ -147,6 +156,89 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
       console.error("Error al enviar comentario:", error);
     } finally {
       setEnviandoComentario(false);
+    }
+  };
+
+  const iniciarEdicionComentario = (item: EventoComentario) => {
+    setEditingComentarioId(item.id);
+    setEditingTexto(item.texto);
+  };
+
+  const cancelarEdicionComentario = () => {
+    setEditingComentarioId(null);
+    setEditingTexto("");
+  };
+
+  const guardarEdicionComentario = async () => {
+    if (!evento || !persona?.id || !editingComentarioId) {
+      return;
+    }
+
+    const nuevoTexto = editingTexto.trim();
+    if (!nuevoTexto) {
+      return;
+    }
+
+    const original = (evento.comentarios ?? []).find((c) => c.id === editingComentarioId);
+    if (!original || original.autorId !== persona.id) {
+      return;
+    }
+
+    const updatedComentarios = (evento.comentarios ?? []).map((item) => {
+      if (item.id !== editingComentarioId) {
+        return item;
+      }
+      return { ...item, texto: nuevoTexto };
+    });
+
+    setSavingEdicion(true);
+    try {
+      const eventoRef = doc(db, "eventos", evento.docId);
+      await updateDoc(eventoRef, {
+        comentarios: updatedComentarios,
+      });
+
+      setEvento((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comentarios: updatedComentarios,
+        };
+      });
+
+      cancelarEdicionComentario();
+    } catch (error) {
+      console.error("Error al editar comentario:", error);
+    } finally {
+      setSavingEdicion(false);
+    }
+  };
+
+  const eliminarComentario = async (commentId: string) => {
+    if (!evento || !canModerateComments) {
+      return;
+    }
+
+    const updatedComentarios = (evento.comentarios ?? []).filter((item) => item.id !== commentId);
+
+    setDeletingComentarioId(commentId);
+    try {
+      const eventoRef = doc(db, "eventos", evento.docId);
+      await updateDoc(eventoRef, {
+        comentarios: updatedComentarios,
+      });
+
+      setEvento((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          comentarios: updatedComentarios,
+        };
+      });
+    } catch (error) {
+      console.error("Error al eliminar comentario:", error);
+    } finally {
+      setDeletingComentarioId(null);
     }
   };
 
@@ -296,7 +388,61 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
                   {" · "}
                   {new Date(item.createdAt).toLocaleString("es-ES")}
                 </p>
-                <p className="comentario-texto">{item.texto}</p>
+
+                {editingComentarioId === item.id ? (
+                  <div className="comentario-edit-box">
+                    <textarea
+                      value={editingTexto}
+                      onChange={(e) => setEditingTexto(e.target.value)}
+                      rows={3}
+                      maxLength={300}
+                    />
+                    <div className="comentario-actions-row">
+                      <button
+                        className="btn-secondary"
+                        type="button"
+                        onClick={cancelarEdicionComentario}
+                        disabled={savingEdicion}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        className="btn-primary"
+                        type="button"
+                        onClick={() => void guardarEdicionComentario()}
+                        disabled={savingEdicion || !editingTexto.trim()}
+                      >
+                        {savingEdicion ? "Guardando..." : "Guardar"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <p className="comentario-texto">{item.texto}</p>
+                    <div className="comentario-actions-row">
+                      {persona?.id === item.autorId ? (
+                        <button
+                          className="btn-secondary"
+                          type="button"
+                          onClick={() => iniciarEdicionComentario(item)}
+                        >
+                          Editar
+                        </button>
+                      ) : null}
+
+                      {canModerateComments ? (
+                        <button
+                          className="btn-secondary"
+                          type="button"
+                          onClick={() => void eliminarComentario(item.id)}
+                          disabled={deletingComentarioId === item.id}
+                        >
+                          {deletingComentarioId === item.id ? "Borrando..." : "Borrar"}
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
+                )}
               </li>
             ))}
           </ul>
