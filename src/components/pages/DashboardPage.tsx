@@ -2,6 +2,7 @@ import CalendarSection from "../organisms/CalendarSection";
 import LeaderboardSection from "../organisms/LeaderboardSection";
 import NextSaturdaySection from "../organisms/NextSaturdaySection";
 import ProximoRetoDashboardSection from "../organisms/ProximoRetoDashboardSection";
+import AboutUsSection from "../organisms/AboutUsSection";
 import type { PersonaDetalle } from "../../type/persona";
 
 type DashboardPageProps = {
@@ -16,6 +17,7 @@ export default function DashboardPage({ persona }: DashboardPageProps) {
       <ProximoRetoDashboardSection />
       <CalendarSection onlyCurrentMonth />
       <LeaderboardSection limit={5} showControls={false} />
+      <AboutUsSection />
     </div>
   );
 }
