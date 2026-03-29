@@ -20,7 +20,11 @@ import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../firebase";
 import type { Asistencia, AsistenciaDoc, Persona } from "../type/asistencia";
-import { getCachedValue, invalidateCache, setCachedValue } from "../lib/readCache";
+import {
+  getCachedValue,
+  invalidateCache,
+  setCachedValue,
+} from "../lib/readCache";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const RETO_PROXIMA_SEMANA_DOC = doc(db, "configuracion", "retoProximaSemana");
@@ -36,11 +40,14 @@ export default function useAsistenciaPage() {
   const [loadingMoreAsistencias, setLoadingMoreAsistencias] = useState(false);
   const [mensaje, setMensaje] = useState("");
   const [selectedAsistenciaId, setSelectedAsistenciaId] = useState("");
-  const [lastAsistenciaDoc, setLastAsistenciaDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [lastAsistenciaDoc, setLastAsistenciaDoc] =
+    useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMoreAsistencias, setHasMoreAsistencias] = useState(false);
 
   const [newFecha, setNewFecha] = useState("2026-03-07");
-  const [personasSeleccionadas, setPersonasSeleccionadas] = useState<string[]>([]);
+  const [personasSeleccionadas, setPersonasSeleccionadas] = useState<string[]>(
+    [],
+  );
 
   const [nombreReto, setNombreReto] = useState("");
   const [puntosReto, setPuntosReto] = useState(10);
@@ -49,17 +56,23 @@ export default function useAsistenciaPage() {
   const [proximoRetoNombre, setProximoRetoNombre] = useState("");
   const [proximoRetoPuntos, setProximoRetoPuntos] = useState(10);
   const [proximoRetoDescripcion, setProximoRetoDescripcion] = useState("");
-  const [proximoRetoEstado, setProximoRetoEstado] = useState<ProximoRetoEstado>("sin-reto");
+  const [proximoRetoEstado, setProximoRetoEstado] =
+    useState<ProximoRetoEstado>("sin-reto");
   const [savingProximoReto, setSavingProximoReto] = useState(false);
 
   const nombreCompleto = useCallback(
-    (p?: Persona) => `${p?.nombre ?? ""} ${p?.apellido1 ?? ""} ${p?.apellido2 ?? ""}`.trim(),
+    (p?: Persona) =>
+      `${p?.nombre ?? ""} ${p?.apellido1 ?? ""} ${p?.apellido2 ?? ""}`.trim(),
     [],
   );
 
   const ordenarPersonas = useCallback(
     (lista: Persona[]) =>
-      [...lista].sort((a, b) => nombreCompleto(a).localeCompare(nombreCompleto(b), "es", { sensitivity: "base" })),
+      [...lista].sort((a, b) =>
+        nombreCompleto(a).localeCompare(nombreCompleto(b), "es", {
+          sensitivity: "base",
+        }),
+      ),
     [nombreCompleto],
   );
 
@@ -68,7 +81,9 @@ export default function useAsistenciaPage() {
       [...ids].sort((a, b) => {
         const pa = personas.find((p) => p.id === a);
         const pb = personas.find((p) => p.id === b);
-        return nombreCompleto(pa).localeCompare(nombreCompleto(pb), "es", { sensitivity: "base" });
+        return nombreCompleto(pa).localeCompare(nombreCompleto(pb), "es", {
+          sensitivity: "base",
+        });
       }),
     [nombreCompleto, personas],
   );
@@ -76,63 +91,81 @@ export default function useAsistenciaPage() {
   const nombrePersonaById = useCallback(
     (id: string) => {
       const p = personas.find((item) => item.id === id);
-      return p ? `${p.nombre} ${p.apellido1 ?? ""}`.trim() : "Persona desconocida";
+      return p
+        ? `${p.nombre} ${p.apellido1 ?? ""}`.trim()
+        : "Persona desconocida";
     },
     [personas],
   );
 
-  const cargarAsistencias = useCallback(async ({
-    reset = true,
-    cursor = null,
-  }: {
-    reset?: boolean;
-    cursor?: QueryDocumentSnapshot<DocumentData> | null;
-  } = {}) => {
-    try {
-      if (reset) {
-        setLoading(true);
-      } else {
-        setLoadingMoreAsistencias(true);
+  const cargarAsistencias = useCallback(
+    async ({
+      reset = true,
+      cursor = null,
+    }: {
+      reset?: boolean;
+      cursor?: QueryDocumentSnapshot<DocumentData> | null;
+    } = {}) => {
+      try {
+        if (reset) {
+          setLoading(true);
+        } else {
+          setLoadingMoreAsistencias(true);
+        }
+
+        const asistenciasQuery = reset
+          ? query(
+              collection(db, "asistencias"),
+              orderBy("fecha", "desc"),
+              limit(ASISTENCIAS_PAGE_SIZE),
+            )
+          : cursor
+            ? query(
+                collection(db, "asistencias"),
+                orderBy("fecha", "desc"),
+                limit(ASISTENCIAS_PAGE_SIZE),
+                startAfter(cursor),
+              )
+            : null;
+
+        if (!asistenciasQuery) {
+          setHasMoreAsistencias(false);
+          if (!reset) setLoadingMoreAsistencias(false);
+          return;
+        }
+
+        const snapshot = await getDocs(asistenciasQuery);
+        const data = snapshot.docs.map((d) => {
+          const raw = d.data() as AsistenciaDoc;
+          return {
+            id: d.id,
+            fecha: raw.fecha ?? "",
+            personas: Array.isArray(raw.personas) ? raw.personas : [],
+            reto: raw.reto,
+            completaron: Array.isArray(raw.completaron) ? raw.completaron : [],
+          } as Asistencia;
+        });
+
+        setAsistencias((prev) => (reset ? data : [...prev, ...data]));
+        setLastAsistenciaDoc(
+          snapshot.docs.length > 0
+            ? snapshot.docs[snapshot.docs.length - 1]
+            : null,
+        );
+        setHasMoreAsistencias(snapshot.docs.length === ASISTENCIAS_PAGE_SIZE);
+      } catch (err) {
+        console.error("Error al cargar asistencias:", err);
+        setMensaje("Error al cargar asistencias.");
+      } finally {
+        if (reset) {
+          setLoading(false);
+        } else {
+          setLoadingMoreAsistencias(false);
+        }
       }
-
-      const asistenciasQuery = reset
-        ? query(collection(db, "asistencias"), orderBy("fecha", "desc"), limit(ASISTENCIAS_PAGE_SIZE))
-        : cursor
-          ? query(collection(db, "asistencias"), orderBy("fecha", "desc"), limit(ASISTENCIAS_PAGE_SIZE), startAfter(cursor))
-          : null;
-
-      if (!asistenciasQuery) {
-        setHasMoreAsistencias(false);
-        if (!reset) setLoadingMoreAsistencias(false);
-        return;
-      }
-
-      const snapshot = await getDocs(asistenciasQuery);
-      const data = snapshot.docs.map((d) => {
-        const raw = d.data() as AsistenciaDoc;
-        return {
-          id: d.id,
-          fecha: raw.fecha ?? "",
-          personas: Array.isArray(raw.personas) ? raw.personas : [],
-          reto: raw.reto,
-          completaron: Array.isArray(raw.completaron) ? raw.completaron : [],
-        } as Asistencia;
-      });
-
-      setAsistencias((prev) => (reset ? data : [...prev, ...data]));
-      setLastAsistenciaDoc(snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null);
-      setHasMoreAsistencias(snapshot.docs.length === ASISTENCIAS_PAGE_SIZE);
-    } catch (err) {
-      console.error("Error al cargar asistencias:", err);
-      setMensaje("Error al cargar asistencias.");
-    } finally {
-      if (reset) {
-        setLoading(false);
-      } else {
-        setLoadingMoreAsistencias(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   const cargarPersonas = useCallback(async () => {
     try {
@@ -141,8 +174,12 @@ export default function useAsistenciaPage() {
         setPersonas(ordenarPersonas(cached));
       }
 
-      const snapshot = await getDocs(query(collection(db, "personas"), orderBy("nombre", "asc"), limit(300)));
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as unknown as Persona));
+      const snapshot = await getDocs(
+        query(collection(db, "personas"), orderBy("nombre", "asc"), limit(300)),
+      );
+      const data = snapshot.docs.map(
+        (d) => ({ id: d.id, ...d.data() }) as unknown as Persona,
+      );
       setPersonas(ordenarPersonas(data));
       setCachedValue(PERSONAS_HOOK_CACHE_KEY, data, PERSONAS_HOOK_CACHE_TTL_MS);
     } catch (err) {
@@ -214,7 +251,11 @@ export default function useAsistenciaPage() {
     }
 
     const asistentesSet = new Set(asistenciaSeleccionada.personas);
-    setPersonasCompletaron((asistenciaSeleccionada.completaron ?? []).filter((id) => asistentesSet.has(id)));
+    setPersonasCompletaron(
+      (asistenciaSeleccionada.completaron ?? []).filter((id) =>
+        asistentesSet.has(id),
+      ),
+    );
   }, [asistenciaSeleccionada]);
 
   const hasProximoReto = useMemo(
@@ -222,7 +263,11 @@ export default function useAsistenciaPage() {
     [proximoRetoNombre],
   );
 
-  const ensureRetoBaseValido = async (): Promise<{ nombre: string; descripcion: string; puntos: number } | null> => {
+  const ensureRetoBaseValido = async (): Promise<{
+    nombre: string;
+    descripcion: string;
+    puntos: number;
+  } | null> => {
     const nombre = proximoRetoNombre.trim();
     const descripcion = proximoRetoDescripcion;
     const puntos = Math.max(1, Math.floor(Number(proximoRetoPuntos) || 1));
@@ -398,8 +443,12 @@ export default function useAsistenciaPage() {
     try {
       setMensaje("");
       const nombreRetoSemanal = proximoRetoNombre.trim();
-      const tieneRetoSemanal = Boolean(nombreRetoSemanal) && proximoRetoEstado === "programado";
-      const puntosRetoSemanal = Math.max(1, Math.floor(Number(proximoRetoPuntos) || 1));
+      const tieneRetoSemanal =
+        Boolean(nombreRetoSemanal) && proximoRetoEstado === "programado";
+      const puntosRetoSemanal = Math.max(
+        1,
+        Math.floor(Number(proximoRetoPuntos) || 1),
+      );
 
       await addDoc(collection(db, "asistencias"), {
         fecha: newFecha,
@@ -451,7 +500,9 @@ export default function useAsistenciaPage() {
           title: "Sin permisos",
           text: "No hay permisos para escribir en asistencias. Revisa reglas de Firestore.",
         });
-        setMensaje("No hay permisos para escribir en asistencias. Revisa reglas de Firestore.");
+        setMensaje(
+          "No hay permisos para escribir en asistencias. Revisa reglas de Firestore.",
+        );
       } else {
         await Swal.fire({
           icon: "error",
@@ -520,7 +571,9 @@ export default function useAsistenciaPage() {
     }
 
     const asistentesSet = new Set(asistenciaSeleccionada.personas);
-    const completaronValidos = personasCompletaron.filter((id) => asistentesSet.has(id));
+    const completaronValidos = personasCompletaron.filter((id) =>
+      asistentesSet.has(id),
+    );
     if (completaronValidos.length === 0) {
       await Swal.fire({
         icon: "warning",
@@ -630,7 +683,10 @@ export default function useAsistenciaPage() {
   );
 
   const editarAsistencia = useCallback(
-    async (id: string, data: { fecha: string; personas: string[] }): Promise<boolean> => {
+    async (
+      id: string,
+      data: { fecha: string; personas: string[] },
+    ): Promise<boolean> => {
       if (!data.fecha) {
         await Swal.fire({
           icon: "warning",
@@ -662,7 +718,9 @@ export default function useAsistenciaPage() {
       try {
         const asistenciaActual = asistencias.find((a) => a.id === id);
         const asistentesSet = new Set(data.personas);
-        const completaronFiltrados = (asistenciaActual?.completaron ?? []).filter((pid) => asistentesSet.has(pid));
+        const completaronFiltrados = (
+          asistenciaActual?.completaron ?? []
+        ).filter((pid) => asistentesSet.has(pid));
 
         await updateDoc(doc(db, "asistencias", id), {
           fecha: data.fecha,
@@ -695,14 +753,23 @@ export default function useAsistenciaPage() {
   const cargarMasAsistencias = useCallback(async (): Promise<void> => {
     if (!hasMoreAsistencias || loadingMoreAsistencias) return;
     await cargarAsistencias({ reset: false, cursor: lastAsistenciaDoc });
-  }, [cargarAsistencias, hasMoreAsistencias, lastAsistenciaDoc, loadingMoreAsistencias]);
+  }, [
+    cargarAsistencias,
+    hasMoreAsistencias,
+    lastAsistenciaDoc,
+    loadingMoreAsistencias,
+  ]);
 
   const togglePersonaSeleccionada = useCallback((id: string) => {
-    setPersonasSeleccionadas((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
+    setPersonasSeleccionadas((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    );
   }, []);
 
   const togglePersonaCompleto = useCallback((id: string) => {
-    setPersonasCompletaron((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
+    setPersonasCompletaron((prev) =>
+      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+    );
   }, []);
 
   return {

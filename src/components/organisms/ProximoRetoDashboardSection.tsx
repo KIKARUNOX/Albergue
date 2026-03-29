@@ -63,13 +63,21 @@ export default function ProximoRetoDashboardSection() {
     <PageSection title="Reto de la proxima semana">
       {loading ? <p className="small-text">Cargando...</p> : null}
       {!loading && error ? <p className="form-message error">{error}</p> : null}
-      {!loading && !error && !reto ? <p className="small-text">No hay reto programado.</p> : null}
+      {!loading && !error && !reto ? (
+        <p className="small-text">No hay reto programado.</p>
+      ) : null}
       {!loading && !error && reto ? (
         <div className="stack-sm">
-          <p><strong>{reto.nombre}</strong> (+{reto.puntos ?? 0} pts)</p>
-          {reto.descripcion?.trim() ? <p className="small-text reto-descripcion">{reto.descripcion}</p> : null}
+          <p>
+            <strong>{reto.nombre}</strong> (+{reto.puntos ?? 0} pts)
+          </p>
+          {reto.descripcion?.trim() ? (
+            <p className="small-text reto-descripcion">{reto.descripcion}</p>
+          ) : null}
           {reto.estado === "aplicado" && reto.ultimaAplicacionFecha ? (
-            <p className="small-text">Aplicado en asistencia: {reto.ultimaAplicacionFecha}</p>
+            <p className="small-text">
+              Aplicado en asistencia: {reto.ultimaAplicacionFecha}
+            </p>
           ) : null}
         </div>
       ) : null}

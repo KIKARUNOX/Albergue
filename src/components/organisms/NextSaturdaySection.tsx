@@ -7,8 +7,12 @@ import "./NextSaturdaySection.css";
 export default function NextSaturdaySection() {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [loading, setLoading] = useState(true);
-  const [intentosPorImagen, setIntentosPorImagen] = useState<Record<number, number>>({});
-  const [imagenesFallidas, setImagenesFallidas] = useState<Record<number, boolean>>({});
+  const [intentosPorImagen, setIntentosPorImagen] = useState<
+    Record<number, number>
+  >({});
+  const [imagenesFallidas, setImagenesFallidas] = useState<
+    Record<number, boolean>
+  >({});
 
   const extraerDriveId = (url: string): string | null => {
     try {
@@ -57,7 +61,9 @@ export default function NextSaturdaySection() {
         const eventosFuturos = querySnapshot.docs
           .map((doc) => doc.data() as Evento)
           .filter((evento) => evento.fecha >= fechaHoy)
-          .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+          .sort(
+            (a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime(),
+          );
 
         if (eventosFuturos.length > 0) {
           // Mostrar el evento más cercano
@@ -111,7 +117,9 @@ export default function NextSaturdaySection() {
 
       <div className="evento-content">
         {evento.titulo && <h3 className="evento-titulo">{evento.titulo}</h3>}
-        {evento.descripcion && <p className="evento-desc">{evento.descripcion}</p>}
+        {evento.descripcion && (
+          <p className="evento-desc">{evento.descripcion}</p>
+        )}
       </div>
 
       {evento.imagenes && evento.imagenes.length > 0 && (
@@ -121,30 +129,34 @@ export default function NextSaturdaySection() {
               {(() => {
                 const candidatas = construirCandidatas(imagen);
                 const intentoActual = intentosPorImagen[index] ?? 0;
-                const srcActual = candidatas[Math.min(intentoActual, candidatas.length - 1)];
+                const srcActual =
+                  candidatas[Math.min(intentoActual, candidatas.length - 1)];
                 const fallida = Boolean(imagenesFallidas[index]);
 
-                return (
-                  fallida
-                    ? <p className="no-evento">No se pudo cargar la imagen (Drive requiere enlace publico).</p>
-                    : (
-                      <img
-                        src={srcActual}
-                        alt={`Evento ${evento.titulo} - Imagen ${index + 1}`}
-                        className="evento-imagen"
-                        referrerPolicy="no-referrer"
-                        onError={() => {
-                          setIntentosPorImagen((prev) => {
-                            const siguiente = (prev[index] ?? 0) + 1;
-                            if (siguiente >= candidatas.length) {
-                              setImagenesFallidas((prevFail) => ({ ...prevFail, [index]: true }));
-                              return prev;
-                            }
-                            return { ...prev, [index]: siguiente };
-                          });
-                        }}
-                      />
-                    )
+                return fallida ? (
+                  <p className="no-evento">
+                    No se pudo cargar la imagen (Drive requiere enlace publico).
+                  </p>
+                ) : (
+                  <img
+                    src={srcActual}
+                    alt={`Evento ${evento.titulo} - Imagen ${index + 1}`}
+                    className="evento-imagen"
+                    referrerPolicy="no-referrer"
+                    onError={() => {
+                      setIntentosPorImagen((prev) => {
+                        const siguiente = (prev[index] ?? 0) + 1;
+                        if (siguiente >= candidatas.length) {
+                          setImagenesFallidas((prevFail) => ({
+                            ...prevFail,
+                            [index]: true,
+                          }));
+                          return prev;
+                        }
+                        return { ...prev, [index]: siguiente };
+                      });
+                    }}
+                  />
                 );
               })()}
             </div>

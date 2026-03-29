@@ -27,9 +27,12 @@ export default function ProximoRetoManagementSection({
     <PageSection title="Reto de la proxima semana">
       <div className="stack-sm">
         <p className="small-text">
-          Flujo por etapas: 1) Guardar borrador, 2) Programar reto, 3) Se aplica automaticamente al crear la proxima asistencia.
+          Flujo por etapas: 1) Guardar borrador, 2) Programar reto, 3) Se aplica
+          automaticamente al crear la proxima asistencia.
         </p>
-        <p className="small-text">Estado actual: <strong>{estadoLabel}</strong></p>
+        <p className="small-text">
+          Estado actual: <strong>{estadoLabel}</strong>
+        </p>
       </div>
 
       <div className="stack-sm">
@@ -46,7 +49,9 @@ export default function ProximoRetoManagementSection({
           step={1}
           placeholder="Puntos"
           value={puntos}
-          onChange={(e) => onPuntos(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+          onChange={(e) =>
+            onPuntos(Math.max(1, Math.floor(Number(e.target.value) || 1)))
+          }
         />
         <textarea
           placeholder="Descripcion del reto"
@@ -58,12 +63,24 @@ export default function ProximoRetoManagementSection({
       </div>
 
       <div className="table-actions">
-        <Button variant="secondary" onClick={onGuardarBorrador} disabled={loading}>Guardar borrador</Button>
-        <Button onClick={onProgramar} disabled={loading}>Programar reto semanal</Button>
-        <Button variant="secondary" onClick={onLimpiar} disabled={loading}>Quitar reto semanal</Button>
+        <Button
+          variant="secondary"
+          onClick={onGuardarBorrador}
+          disabled={loading}
+        >
+          Guardar borrador
+        </Button>
+        <Button onClick={onProgramar} disabled={loading}>
+          Programar reto semanal
+        </Button>
+        <Button variant="secondary" onClick={onLimpiar} disabled={loading}>
+          Quitar reto semanal
+        </Button>
       </div>
 
-      <p className="small-text">Estado contenido: {hasReto ? "Con contenido" : "Vacio"}</p>
+      <p className="small-text">
+        Estado contenido: {hasReto ? "Con contenido" : "Vacio"}
+      </p>
     </PageSection>
   );
 }

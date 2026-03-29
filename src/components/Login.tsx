@@ -16,7 +16,7 @@ export default function Login() {
   const login = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
-    
+
     const emailNormalizado = email.trim().toLowerCase();
     if (!emailNormalizado || !password) {
       await Swal.fire({
@@ -50,7 +50,8 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, emailNormalizado, password);
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : "Error al iniciar sesión";
+      const errorMessage =
+        e instanceof Error ? e.message : "Error al iniciar sesión";
       await Swal.fire({
         icon: "error",
         title: "No se pudo iniciar sesion",

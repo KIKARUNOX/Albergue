@@ -15,9 +15,12 @@ export default function AsistenciaPage() {
   const [showRetoModal, setShowRetoModal] = useState(false);
   const [showProximoRetoModal, setShowProximoRetoModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedAsistenciaForDetails, setSelectedAsistenciaForDetails] = useState<string | null>(null);
+  const [selectedAsistenciaForDetails, setSelectedAsistenciaForDetails] =
+    useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedAsistenciaForEdit, setSelectedAsistenciaForEdit] = useState<string | null>(null);
+  const [selectedAsistenciaForEdit, setSelectedAsistenciaForEdit] = useState<
+    string | null
+  >(null);
   const [editFecha, setEditFecha] = useState("");
   const [editPersonas, setEditPersonas] = useState<string[]>([]);
 
@@ -184,7 +187,7 @@ export default function AsistenciaPage() {
           void cargarMasAsistencias();
         }}
         onEdit={(id) => {
-          const asistencia = asistencias.find(a => a.id === id);
+          const asistencia = asistencias.find((a) => a.id === id);
           if (asistencia) {
             setSelectedAsistenciaForEdit(id);
             setEditFecha(asistencia.fecha);
@@ -205,63 +208,80 @@ export default function AsistenciaPage() {
         }}
       />
 
-      <InasistentesSection asistencias={asistencias} personas={personas} threshold={3} />
+      <InasistentesSection
+        asistencias={asistencias}
+        personas={personas}
+        threshold={3}
+      />
 
       {/* Modal para ver detalles de asistencia */}
       <Modal
         isOpen={showDetailsModal}
-        title={`Detalle de asistencia${selectedAsistenciaForDetails ? ` (${asistencias.find(a => a.id === selectedAsistenciaForDetails)?.fecha || ""})` : ""}`}
+        title={`Detalle de asistencia${selectedAsistenciaForDetails ? ` (${asistencias.find((a) => a.id === selectedAsistenciaForDetails)?.fecha || ""})` : ""}`}
         onClose={() => {
           setShowDetailsModal(false);
           setSelectedAsistenciaForDetails(null);
         }}
       >
-        {selectedAsistenciaForDetails && asistencias.find(a => a.id === selectedAsistenciaForDetails) && (
-          <div className="stack-sm">
-            {(() => {
-              const asistencia = asistencias.find(a => a.id === selectedAsistenciaForDetails);
-              if (!asistencia) return null;
+        {selectedAsistenciaForDetails &&
+          asistencias.find((a) => a.id === selectedAsistenciaForDetails) && (
+            <div className="stack-sm">
+              {(() => {
+                const asistencia = asistencias.find(
+                  (a) => a.id === selectedAsistenciaForDetails,
+                );
+                if (!asistencia) return null;
 
-              return (
-                <>
-                  <p>
-                    <strong>Asistentes:</strong> {asistencia.personas.length}
-                  </p>
-                  <ul className="compact-list">
-                    {ordenarIdsPorNombre(asistencia.personas).map((pid) => (
-                      <li key={pid}>{nombrePersonaById(pid)}</li>
-                    ))}
-                  </ul>
+                return (
+                  <>
+                    <p>
+                      <strong>Asistentes:</strong> {asistencia.personas.length}
+                    </p>
+                    <ul className="compact-list">
+                      {ordenarIdsPorNombre(asistencia.personas).map((pid) => (
+                        <li key={pid}>{nombrePersonaById(pid)}</li>
+                      ))}
+                    </ul>
 
-                  {asistencia.reto ? (
-                    <>
-                      <p>
-                        <strong>Reto:</strong> {asistencia.reto.nombre} (+{asistencia.reto.puntos} pts)
+                    {asistencia.reto ? (
+                      <>
+                        <p>
+                          <strong>Reto:</strong> {asistencia.reto.nombre} (+
+                          {asistencia.reto.puntos} pts)
+                        </p>
+                        {asistencia.reto.descripcion ? (
+                          <p className="small-text reto-descripcion">
+                            {asistencia.reto.descripcion}
+                          </p>
+                        ) : null}
+                        <p>
+                          <strong>Completaron:</strong>{" "}
+                          {asistencia.completaron.length}
+                        </p>
+                        <ul className="compact-list">
+                          {ordenarIdsPorNombre(asistencia.completaron).map(
+                            (pid) => (
+                              <li key={pid}>{nombrePersonaById(pid)}</li>
+                            ),
+                          )}
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="small-text">
+                        No hay reto asignado para esta asistencia.
                       </p>
-                      {asistencia.reto.descripcion ? <p className="small-text reto-descripcion">{asistencia.reto.descripcion}</p> : null}
-                      <p>
-                        <strong>Completaron:</strong> {asistencia.completaron.length}
-                      </p>
-                      <ul className="compact-list">
-                        {ordenarIdsPorNombre(asistencia.completaron).map((pid) => (
-                          <li key={pid}>{nombrePersonaById(pid)}</li>
-                        ))}
-                      </ul>
-                    </>
-                  ) : (
-                    <p className="small-text">No hay reto asignado para esta asistencia.</p>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-        )}
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
       </Modal>
 
       {/* Modal para editar asistencia */}
       <Modal
         isOpen={showEditModal}
-        title={`Editar asistencia${selectedAsistenciaForEdit ? ` (${asistencias.find(a => a.id === selectedAsistenciaForEdit)?.fecha || ""})` : ""}`}
+        title={`Editar asistencia${selectedAsistenciaForEdit ? ` (${asistencias.find((a) => a.id === selectedAsistenciaForEdit)?.fecha || ""})` : ""}`}
         onClose={() => {
           setShowEditModal(false);
           setSelectedAsistenciaForEdit(null);
@@ -269,49 +289,64 @@ export default function AsistenciaPage() {
           setEditPersonas([]);
         }}
       >
-        {selectedAsistenciaForEdit && asistencias.find(a => a.id === selectedAsistenciaForEdit) && (
-          <div className="stack-sm">
-            <label>
-              Fecha
-              <input type="date" value={editFecha} onChange={(e) => setEditFecha(e.target.value)} />
-            </label>
-            <p>
-              <strong>Personas asistentes</strong>
-            </p>
-            <PersonCheckboxGrid 
-              personas={personas} 
-              selectedIds={editPersonas} 
-              onToggle={(id) => {
-                setEditPersonas((prev) => (prev.includes(id) ? prev.filter((pid) => pid !== id) : [...prev, id]));
-              }}
-            />
-            <div className="table-actions">
-              <Button
-                onClick={() => {
-                  void (async () => {
-                    const ok = await editarAsistencia(selectedAsistenciaForEdit, { fecha: editFecha, personas: editPersonas });
-                    if (ok) {
-                      setShowEditModal(false);
-                      setSelectedAsistenciaForEdit(null);
-                      setEditFecha("");
-                      setEditPersonas([]);
-                    }
-                  })();
+        {selectedAsistenciaForEdit &&
+          asistencias.find((a) => a.id === selectedAsistenciaForEdit) && (
+            <div className="stack-sm">
+              <label>
+                Fecha
+                <input
+                  type="date"
+                  value={editFecha}
+                  onChange={(e) => setEditFecha(e.target.value)}
+                />
+              </label>
+              <p>
+                <strong>Personas asistentes</strong>
+              </p>
+              <PersonCheckboxGrid
+                personas={personas}
+                selectedIds={editPersonas}
+                onToggle={(id) => {
+                  setEditPersonas((prev) =>
+                    prev.includes(id)
+                      ? prev.filter((pid) => pid !== id)
+                      : [...prev, id],
+                  );
                 }}
-              >
-                Guardar cambios
-              </Button>
-              <Button variant="secondary" onClick={() => {
-                setShowEditModal(false);
-                setSelectedAsistenciaForEdit(null);
-                setEditFecha("");
-                setEditPersonas([]);
-              }}>
-                Cancelar
-              </Button>
+              />
+              <div className="table-actions">
+                <Button
+                  onClick={() => {
+                    void (async () => {
+                      const ok = await editarAsistencia(
+                        selectedAsistenciaForEdit,
+                        { fecha: editFecha, personas: editPersonas },
+                      );
+                      if (ok) {
+                        setShowEditModal(false);
+                        setSelectedAsistenciaForEdit(null);
+                        setEditFecha("");
+                        setEditPersonas([]);
+                      }
+                    })();
+                  }}
+                >
+                  Guardar cambios
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setSelectedAsistenciaForEdit(null);
+                    setEditFecha("");
+                    setEditPersonas([]);
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
       </Modal>
     </div>
   );

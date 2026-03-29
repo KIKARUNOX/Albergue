@@ -22,11 +22,15 @@ export default function RetoSection({
     <PageSection title="Agregar reto a asistencia">
       <label>
         Selecciona asistencia
-        <select value={selectedAsistenciaId} onChange={(e) => onSelectedAsistenciaId(e.target.value)}>
+        <select
+          value={selectedAsistenciaId}
+          onChange={(e) => onSelectedAsistenciaId(e.target.value)}
+        >
           <option value="">-- Selecciona --</option>
           {asistencias.map((a) => (
             <option key={a.id} value={a.id}>
-              {a.fecha} - {a.personas.length} personas {a.reto ? "Con reto" : ""}
+              {a.fecha} - {a.personas.length} personas{" "}
+              {a.reto ? "Con reto" : ""}
             </option>
           ))}
         </select>
@@ -47,7 +51,9 @@ export default function RetoSection({
           step={1}
           placeholder="Puntos"
           value={puntosReto}
-          onChange={(e) => onPuntosReto(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+          onChange={(e) =>
+            onPuntosReto(Math.max(1, Math.floor(Number(e.target.value) || 1)))
+          }
         />
         <textarea
           placeholder="Descripcion del reto *"
@@ -60,7 +66,11 @@ export default function RetoSection({
       </div>
 
       <h3>Personas que completaron el reto</h3>
-      <PersonCheckboxGrid personas={personas} selectedIds={personasCompletaron} onToggle={onTogglePersonaCompleto} />
+      <PersonCheckboxGrid
+        personas={personas}
+        selectedIds={personasCompletaron}
+        onToggle={onTogglePersonaCompleto}
+      />
 
       <Button onClick={onAddReto}>Agregar reto</Button>
     </PageSection>

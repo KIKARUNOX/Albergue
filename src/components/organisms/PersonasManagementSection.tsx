@@ -15,9 +15,23 @@ import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../../firebase";
 import { defaultPermisosByRole } from "../../lib/permissions";
-import { invalidateCache, setCachedValue, getCachedValue } from "../../lib/readCache";
-import { normalizeEmail, normalizeName, normalizePhone, normalizeRoleValue } from "../../lib/textNormalization";
-import type { PersonaDetalle, PersonaForm, PersonaPermisos, PersonaRole } from "../../type/persona";
+import {
+  invalidateCache,
+  setCachedValue,
+  getCachedValue,
+} from "../../lib/readCache";
+import {
+  normalizeEmail,
+  normalizeName,
+  normalizePhone,
+  normalizeRoleValue,
+} from "../../lib/textNormalization";
+import type {
+  PersonaDetalle,
+  PersonaForm,
+  PersonaPermisos,
+  PersonaRole,
+} from "../../type/persona";
 import Button from "../atoms/Button";
 import Modal from "../atoms/Modal";
 import PageSection from "../templates/PageSection";
@@ -101,12 +115,15 @@ type PersonasManagementSectionProps = {
   canManagePermissions: boolean;
 };
 
-export default function PersonasManagementSection({ canManagePermissions }: PersonasManagementSectionProps) {
+export default function PersonasManagementSection({
+  canManagePermissions,
+}: PersonasManagementSectionProps) {
   "use no memo";
 
   const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
   const [ui, setUi] = useState<PersonasManagementUiState>(initialUiState);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [lastDoc, setLastDoc] =
+    useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -114,17 +131,38 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
     setUi((prev) => ({ ...prev, ...next }));
   };
 
-  const fetchPersonasPage = async (cursor?: QueryDocumentSnapshot<DocumentData>) => {
+  const fetchPersonasPage = async (
+    cursor?: QueryDocumentSnapshot<DocumentData>,
+  ) => {
     const personasQuery = cursor
-      ? query(collection(db, "personas"), orderBy("nombre", "asc"), limit(PERSONAS_PAGE_SIZE), startAfter(cursor))
-      : query(collection(db, "personas"), orderBy("nombre", "asc"), limit(PERSONAS_PAGE_SIZE));
+      ? query(
+          collection(db, "personas"),
+          orderBy("nombre", "asc"),
+          limit(PERSONAS_PAGE_SIZE),
+          startAfter(cursor),
+        )
+      : query(
+          collection(db, "personas"),
+          orderBy("nombre", "asc"),
+          limit(PERSONAS_PAGE_SIZE),
+        );
 
     const snapshot = await getDocs(personasQuery);
-    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PersonaDetalle));
-    data.sort((a, b) => `${a.nombre} ${a.apellido1 ?? ""}`.localeCompare(`${b.nombre} ${b.apellido1 ?? ""}`, "es"));
+    const data = snapshot.docs.map(
+      (d) => ({ id: d.id, ...d.data() }) as PersonaDetalle,
+    );
+    data.sort((a, b) =>
+      `${a.nombre} ${a.apellido1 ?? ""}`.localeCompare(
+        `${b.nombre} ${b.apellido1 ?? ""}`,
+        "es",
+      ),
+    );
     return {
       data,
-      nextCursor: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+      nextCursor:
+        snapshot.docs.length > 0
+          ? snapshot.docs[snapshot.docs.length - 1]
+          : null,
       hasMore: snapshot.docs.length === PERSONAS_PAGE_SIZE,
     };
   };
@@ -138,7 +176,11 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
       patchUi({ loading: false });
     }
 
-    const { data, nextCursor, hasMore: nextHasMore } = await fetchPersonasPage();
+    const {
+      data,
+      nextCursor,
+      hasMore: nextHasMore,
+    } = await fetchPersonasPage();
     setPersonas(data);
     setLastDoc(nextCursor);
     setHasMore(nextHasMore);
@@ -156,7 +198,10 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
       .catch((error: unknown) => {
         if (!mounted) return;
         console.error("Error al cargar personas:", error);
-        patchUi({ mensaje: "No se pudieron cargar las personas.", loading: false });
+        patchUi({
+          mensaje: "No se pudieron cargar las personas.",
+          loading: false,
+        });
         setPersonas([]);
       });
 
@@ -185,7 +230,11 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
       .then(({ data, nextCursor, hasMore: nextHasMore }) => {
         setPersonas((prev) => {
           const merged = [...prev, ...data];
-          setCachedValue(PERSONAS_CACHE_KEY, merged.slice(0, PERSONAS_PAGE_SIZE), PERSONAS_CACHE_TTL_MS);
+          setCachedValue(
+            PERSONAS_CACHE_KEY,
+            merged.slice(0, PERSONAS_PAGE_SIZE),
+            PERSONAS_CACHE_TTL_MS,
+          );
           return merged;
         });
         setLastDoc(nextCursor);
@@ -204,17 +253,30 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
     if (!normalized) return personas;
 
     return personas.filter((p) => {
-      const fullName = `${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.toLowerCase();
+      const fullName =
+        `${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.toLowerCase();
       return fullName.includes(normalized);
     });
   }, [personas, ui.query]);
 
-  const createField = <K extends keyof PersonaForm>(key: K, value: PersonaForm[K]) => {
-    setUi((prev) => ({ ...prev, createForm: { ...prev.createForm, [key]: value } }));
+  const createField = <K extends keyof PersonaForm>(
+    key: K,
+    value: PersonaForm[K],
+  ) => {
+    setUi((prev) => ({
+      ...prev,
+      createForm: { ...prev.createForm, [key]: value },
+    }));
   };
 
-  const editField = <K extends keyof PersonaForm>(key: K, value: PersonaForm[K]) => {
-    setUi((prev) => ({ ...prev, editForm: { ...prev.editForm, [key]: value } }));
+  const editField = <K extends keyof PersonaForm>(
+    key: K,
+    value: PersonaForm[K],
+  ) => {
+    setUi((prev) => ({
+      ...prev,
+      editForm: { ...prev.editForm, [key]: value },
+    }));
   };
 
   const abrirEdicion = (persona: PersonaDetalle) => {
@@ -252,11 +314,15 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
   };
 
   const toggleCreatePermiso = (key: keyof PersonaPermisos) => {
-    patchUi({ createPermisos: { ...ui.createPermisos, [key]: !ui.createPermisos[key] } });
+    patchUi({
+      createPermisos: { ...ui.createPermisos, [key]: !ui.createPermisos[key] },
+    });
   };
 
   const toggleEditPermiso = (key: keyof PersonaPermisos) => {
-    patchUi({ editPermisos: { ...ui.editPermisos, [key]: !ui.editPermisos[key] } });
+    patchUi({
+      editPermisos: { ...ui.editPermisos, [key]: !ui.editPermisos[key] },
+    });
   };
 
   const guardarNuevaPersona = async () => {
@@ -274,19 +340,21 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
     patchUi({ saving: true, mensaje: "" });
 
     await addDoc(collection(db, "personas"), {
-        nombre: normalizeName(ui.createForm.nombre),
-        apellido1: normalizeName(ui.createForm.apellido1),
-        apellido2: normalizeName(ui.createForm.apellido2),
-        email: normalizeEmail(ui.createForm.email),
-        telefono: normalizePhone(ui.createForm.telefono),
-        localidad: ui.createForm.localidad?.trim() ?? "",
-        fechaNacimiento: ui.createForm.fechaNacimiento ?? "",
-        bautizado: Boolean(ui.createForm.bautizado),
-        puntos: Number(ui.createForm.puntos ?? 0),
-        role: canManagePermissions ? normalizeRoleValue(ui.createRole) : "joven",
-        permisos: canManagePermissions ? ui.createPermisos : defaultPermisosByRole("joven"),
-        createdAt: serverTimestamp(),
-      })
+      nombre: normalizeName(ui.createForm.nombre),
+      apellido1: normalizeName(ui.createForm.apellido1),
+      apellido2: normalizeName(ui.createForm.apellido2),
+      email: normalizeEmail(ui.createForm.email),
+      telefono: normalizePhone(ui.createForm.telefono),
+      localidad: ui.createForm.localidad?.trim() ?? "",
+      fechaNacimiento: ui.createForm.fechaNacimiento ?? "",
+      bautizado: Boolean(ui.createForm.bautizado),
+      puntos: Number(ui.createForm.puntos ?? 0),
+      role: canManagePermissions ? normalizeRoleValue(ui.createRole) : "joven",
+      permisos: canManagePermissions
+        ? ui.createPermisos
+        : defaultPermisosByRole("joven"),
+      createdAt: serverTimestamp(),
+    })
       .then(() => {
         patchUi({
           createForm: emptyForm,
@@ -330,24 +398,28 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
     patchUi({ saving: true, mensaje: "" });
 
     await updateDoc(doc(db, "personas", id), {
-        nombre: normalizeName(ui.editForm.nombre),
-        apellido1: normalizeName(ui.editForm.apellido1),
-        apellido2: normalizeName(ui.editForm.apellido2),
-        email: normalizeEmail(ui.editForm.email),
-        telefono: normalizePhone(ui.editForm.telefono),
-        localidad: ui.editForm.localidad?.trim() ?? "",
-        fechaNacimiento: ui.editForm.fechaNacimiento ?? "",
-        bautizado: Boolean(ui.editForm.bautizado),
-        puntos: Number(ui.editForm.puntos ?? 0),
-        ...(canManagePermissions
-          ? {
-              role: normalizeRoleValue(ui.editRole),
-              permisos: ui.editPermisos,
-            }
-          : {}),
-      })
+      nombre: normalizeName(ui.editForm.nombre),
+      apellido1: normalizeName(ui.editForm.apellido1),
+      apellido2: normalizeName(ui.editForm.apellido2),
+      email: normalizeEmail(ui.editForm.email),
+      telefono: normalizePhone(ui.editForm.telefono),
+      localidad: ui.editForm.localidad?.trim() ?? "",
+      fechaNacimiento: ui.editForm.fechaNacimiento ?? "",
+      bautizado: Boolean(ui.editForm.bautizado),
+      puntos: Number(ui.editForm.puntos ?? 0),
+      ...(canManagePermissions
+        ? {
+            role: normalizeRoleValue(ui.editRole),
+            permisos: ui.editPermisos,
+          }
+        : {}),
+    })
       .then(() => {
-        patchUi({ mensaje: "Persona actualizada correctamente.", editingId: "", selectedPersona: null });
+        patchUi({
+          mensaje: "Persona actualizada correctamente.",
+          editingId: "",
+          selectedPersona: null,
+        });
         return Swal.fire({
           icon: "success",
           title: "Actualizacion exitosa",
@@ -378,7 +450,10 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
           value={ui.query}
           onChange={(e) => patchUi({ query: e.target.value })}
         />
-        <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
+        <Button
+          variant="secondary"
+          onClick={() => patchUi({ showCreateModal: true })}
+        >
           Agregar persona
         </Button>
       </div>
@@ -401,16 +476,24 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
               <tbody>
                 {filtered.map((p) => (
                   <tr key={p.id}>
-                    <td data-label="Nombre">{`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}</td>
+                    <td data-label="Nombre">
+                      {`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}
+                    </td>
                     <td data-label="Telefono">{p.telefono ?? "-"}</td>
                     <td data-label="Rol">{p.role ?? "coordinador"}</td>
                     <td data-label="Puntos">{p.puntos ?? 0}</td>
                     <td data-label="Acciones">
                       <div className="table-actions">
-                        <Button variant="secondary" onClick={() => patchUi({ selectedPersona: p })}>
+                        <Button
+                          variant="secondary"
+                          onClick={() => patchUi({ selectedPersona: p })}
+                        >
                           Ver detalles
                         </Button>
-                        <Button variant="secondary" onClick={() => abrirEdicion(p)}>
+                        <Button
+                          variant="secondary"
+                          onClick={() => abrirEdicion(p)}
+                        >
                           Editar
                         </Button>
                       </div>
@@ -422,7 +505,11 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
           </div>
 
           {hasMore ? (
-            <Button variant="secondary" onClick={() => void cargarMasPersonas()} disabled={loadingMore}>
+            <Button
+              variant="secondary"
+              onClick={() => void cargarMasPersonas()}
+              disabled={loadingMore}
+            >
               {loadingMore ? "Cargando..." : "Cargar mas personas"}
             </Button>
           ) : null}
@@ -443,25 +530,67 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
         }}
       >
         <div className="stack-sm">
-          <input placeholder="Nombre *" required minLength={2} value={ui.createForm.nombre} onChange={(e) => createField("nombre", e.target.value)} />
-          <input placeholder="Primer apellido" value={ui.createForm.apellido1} onChange={(e) => createField("apellido1", e.target.value)} />
-          <input placeholder="Segundo apellido" value={ui.createForm.apellido2} onChange={(e) => createField("apellido2", e.target.value)} />
-          <input type="email" placeholder="Correo" value={ui.createForm.email} onChange={(e) => createField("email", e.target.value)} />
-          <input type="tel" pattern="[0-9+()\s-]{7,20}" placeholder="Telefono" value={ui.createForm.telefono} onChange={(e) => createField("telefono", e.target.value)} />
-          <input placeholder="Localidad" value={ui.createForm.localidad} onChange={(e) => createField("localidad", e.target.value)} />
+          <input
+            placeholder="Nombre *"
+            required
+            minLength={2}
+            value={ui.createForm.nombre}
+            onChange={(e) => createField("nombre", e.target.value)}
+          />
+          <input
+            placeholder="Primer apellido"
+            value={ui.createForm.apellido1}
+            onChange={(e) => createField("apellido1", e.target.value)}
+          />
+          <input
+            placeholder="Segundo apellido"
+            value={ui.createForm.apellido2}
+            onChange={(e) => createField("apellido2", e.target.value)}
+          />
+          <input
+            type="email"
+            placeholder="Correo"
+            value={ui.createForm.email}
+            onChange={(e) => createField("email", e.target.value)}
+          />
+          <input
+            type="tel"
+            pattern="[0-9+()\s-]{7,20}"
+            placeholder="Telefono"
+            value={ui.createForm.telefono}
+            onChange={(e) => createField("telefono", e.target.value)}
+          />
+          <input
+            placeholder="Localidad"
+            value={ui.createForm.localidad}
+            onChange={(e) => createField("localidad", e.target.value)}
+          />
           <label>
             Fecha de nacimiento
-            <input type="date" value={ui.createForm.fechaNacimiento} onChange={(e) => createField("fechaNacimiento", e.target.value)} />
+            <input
+              type="date"
+              value={ui.createForm.fechaNacimiento}
+              onChange={(e) => createField("fechaNacimiento", e.target.value)}
+            />
           </label>
           <label className="checkbox-item">
-            <input type="checkbox" checked={ui.createForm.bautizado} onChange={(e) => createField("bautizado", e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={ui.createForm.bautizado}
+              onChange={(e) => createField("bautizado", e.target.checked)}
+            />
             <span>Bautizado</span>
           </label>
           {canManagePermissions ? (
             <>
               <label>
                 Rol
-                <select value={ui.createRole} onChange={(e) => onCreateRoleChange(e.target.value as PersonaRole)}>
+                <select
+                  value={ui.createRole}
+                  onChange={(e) =>
+                    onCreateRoleChange(e.target.value as PersonaRole)
+                  }
+                >
                   <option value="joven">Joven</option>
                   <option value="coordinador">Coordinador</option>
                   <option value="lider">Lider</option>
@@ -469,17 +598,33 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
               </label>
               <div className="stack-sm">
                 <strong>Permisos</strong>
-                {(Object.keys(PERMISO_LABELS) as Array<keyof PersonaPermisos>).map((key) => (
+                {(
+                  Object.keys(PERMISO_LABELS) as Array<keyof PersonaPermisos>
+                ).map((key) => (
                   <label key={key} className="checkbox-item">
-                    <input type="checkbox" checked={ui.createPermisos[key]} onChange={() => toggleCreatePermiso(key)} />
+                    <input
+                      type="checkbox"
+                      checked={ui.createPermisos[key]}
+                      onChange={() => toggleCreatePermiso(key)}
+                    />
                     <span>{PERMISO_LABELS[key]}</span>
                   </label>
                 ))}
               </div>
             </>
           ) : null}
-          <input type="number" min={0} step={1} placeholder="Puntos" value={ui.createForm.puntos ?? 0} onChange={(e) => createField("puntos", Number(e.target.value) || 0)} />
-          <Button onClick={() => void guardarNuevaPersona()} disabled={ui.saving}>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            placeholder="Puntos"
+            value={ui.createForm.puntos ?? 0}
+            onChange={(e) => createField("puntos", Number(e.target.value) || 0)}
+          />
+          <Button
+            onClick={() => void guardarNuevaPersona()}
+            disabled={ui.saving}
+          >
             {ui.saving ? "Guardando..." : "Guardar persona"}
           </Button>
         </div>
@@ -488,7 +633,11 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
       {/* Modal para ver y editar detalles de persona */}
       <Modal
         isOpen={ui.selectedPersona !== null}
-        title={ui.editingId === ui.selectedPersona?.id ? "Editar persona" : "Detalle de persona"}
+        title={
+          ui.editingId === ui.selectedPersona?.id
+            ? "Editar persona"
+            : "Detalle de persona"
+        }
         onClose={() => {
           patchUi({ selectedPersona: null, editingId: "" });
         }}
@@ -497,26 +646,79 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
           <div className="stack-sm">
             {ui.editingId === ui.selectedPersona.id ? (
               <>
-                <input placeholder="Nombre" required minLength={2} value={ui.editForm.nombre} onChange={(e) => editField("nombre", e.target.value)} />
-                <input placeholder="Primer apellido" value={ui.editForm.apellido1} onChange={(e) => editField("apellido1", e.target.value)} />
-                <input placeholder="Segundo apellido" value={ui.editForm.apellido2} onChange={(e) => editField("apellido2", e.target.value)} />
-                <input type="email" placeholder="Correo" value={ui.editForm.email} onChange={(e) => editField("email", e.target.value)} />
-                <input type="tel" pattern="[0-9+()\s-]{7,20}" placeholder="Telefono" value={ui.editForm.telefono} onChange={(e) => editField("telefono", e.target.value)} />
-                <input placeholder="Localidad" value={ui.editForm.localidad} onChange={(e) => editField("localidad", e.target.value)} />
+                <input
+                  placeholder="Nombre"
+                  required
+                  minLength={2}
+                  value={ui.editForm.nombre}
+                  onChange={(e) => editField("nombre", e.target.value)}
+                />
+                <input
+                  placeholder="Primer apellido"
+                  value={ui.editForm.apellido1}
+                  onChange={(e) => editField("apellido1", e.target.value)}
+                />
+                <input
+                  placeholder="Segundo apellido"
+                  value={ui.editForm.apellido2}
+                  onChange={(e) => editField("apellido2", e.target.value)}
+                />
+                <input
+                  type="email"
+                  placeholder="Correo"
+                  value={ui.editForm.email}
+                  onChange={(e) => editField("email", e.target.value)}
+                />
+                <input
+                  type="tel"
+                  pattern="[0-9+()\s-]{7,20}"
+                  placeholder="Telefono"
+                  value={ui.editForm.telefono}
+                  onChange={(e) => editField("telefono", e.target.value)}
+                />
+                <input
+                  placeholder="Localidad"
+                  value={ui.editForm.localidad}
+                  onChange={(e) => editField("localidad", e.target.value)}
+                />
                 <label>
                   Fecha de nacimiento
-                  <input type="date" value={ui.editForm.fechaNacimiento} onChange={(e) => editField("fechaNacimiento", e.target.value)} />
+                  <input
+                    type="date"
+                    value={ui.editForm.fechaNacimiento}
+                    onChange={(e) =>
+                      editField("fechaNacimiento", e.target.value)
+                    }
+                  />
                 </label>
                 <label className="checkbox-item">
-                  <input type="checkbox" checked={ui.editForm.bautizado} onChange={(e) => editField("bautizado", e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={ui.editForm.bautizado}
+                    onChange={(e) => editField("bautizado", e.target.checked)}
+                  />
                   <span>Bautizado</span>
                 </label>
-                <input type="number" min={0} step={1} placeholder="Puntos" value={ui.editForm.puntos ?? 0} onChange={(e) => editField("puntos", Number(e.target.value) || 0)} />
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  placeholder="Puntos"
+                  value={ui.editForm.puntos ?? 0}
+                  onChange={(e) =>
+                    editField("puntos", Number(e.target.value) || 0)
+                  }
+                />
                 {canManagePermissions ? (
                   <>
                     <label>
                       Rol
-                      <select value={ui.editRole} onChange={(e) => onEditRoleChange(e.target.value as PersonaRole)}>
+                      <select
+                        value={ui.editRole}
+                        onChange={(e) =>
+                          onEditRoleChange(e.target.value as PersonaRole)
+                        }
+                      >
                         <option value="joven">Joven</option>
                         <option value="coordinador">Coordinador</option>
                         <option value="lider">Lider</option>
@@ -524,9 +726,17 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
                     </label>
                     <div className="stack-sm">
                       <strong>Permisos</strong>
-                      {(Object.keys(PERMISO_LABELS) as Array<keyof PersonaPermisos>).map((key) => (
+                      {(
+                        Object.keys(PERMISO_LABELS) as Array<
+                          keyof PersonaPermisos
+                        >
+                      ).map((key) => (
                         <label key={key} className="checkbox-item">
-                          <input type="checkbox" checked={ui.editPermisos[key]} onChange={() => toggleEditPermiso(key)} />
+                          <input
+                            type="checkbox"
+                            checked={ui.editPermisos[key]}
+                            onChange={() => toggleEditPermiso(key)}
+                          />
                           <span>{PERMISO_LABELS[key]}</span>
                         </label>
                       ))}
@@ -534,24 +744,52 @@ export default function PersonasManagementSection({ canManagePermissions }: Pers
                   </>
                 ) : null}
                 <div className="table-actions">
-                  <Button onClick={() => void guardarEdicion(ui.selectedPersona!.id)} disabled={ui.saving}>
+                  <Button
+                    onClick={() => void guardarEdicion(ui.selectedPersona!.id)}
+                    disabled={ui.saving}
+                  >
                     {ui.saving ? "Guardando..." : "Guardar cambios"}
                   </Button>
-                  <Button variant="secondary" onClick={() => patchUi({ editingId: "" })}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => patchUi({ editingId: "" })}
+                  >
                     Cancelar
                   </Button>
                 </div>
               </>
             ) : (
               <div className="stack-sm">
-                <p><strong>Nombre:</strong> {`${ui.selectedPersona.nombre} ${ui.selectedPersona.apellido1 ?? ""} ${ui.selectedPersona.apellido2 ?? ""}`.trim()}</p>
-                <p><strong>Email:</strong> {ui.selectedPersona.email ?? "-"}</p>
-                <p><strong>Telefono:</strong> {ui.selectedPersona.telefono ?? "-"}</p>
-                <p><strong>Localidad:</strong> {ui.selectedPersona.localidad ?? "-"}</p>
-                <p><strong>Fecha nacimiento:</strong> {ui.selectedPersona.fechaNacimiento ?? "-"}</p>
-                <p><strong>Bautizado:</strong> {ui.selectedPersona.bautizado ? "Si" : "No"}</p>
-                <p><strong>Rol:</strong> {ui.selectedPersona.role ?? "coordinador"}</p>
-                <p><strong>Puntos:</strong> {ui.selectedPersona.puntos ?? 0}</p>
+                <p>
+                  <strong>Nombre:</strong>{" "}
+                  {`${ui.selectedPersona.nombre} ${ui.selectedPersona.apellido1 ?? ""} ${ui.selectedPersona.apellido2 ?? ""}`.trim()}
+                </p>
+                <p>
+                  <strong>Email:</strong> {ui.selectedPersona.email ?? "-"}
+                </p>
+                <p>
+                  <strong>Telefono:</strong>{" "}
+                  {ui.selectedPersona.telefono ?? "-"}
+                </p>
+                <p>
+                  <strong>Localidad:</strong>{" "}
+                  {ui.selectedPersona.localidad ?? "-"}
+                </p>
+                <p>
+                  <strong>Fecha nacimiento:</strong>{" "}
+                  {ui.selectedPersona.fechaNacimiento ?? "-"}
+                </p>
+                <p>
+                  <strong>Bautizado:</strong>{" "}
+                  {ui.selectedPersona.bautizado ? "Si" : "No"}
+                </p>
+                <p>
+                  <strong>Rol:</strong>{" "}
+                  {ui.selectedPersona.role ?? "coordinador"}
+                </p>
+                <p>
+                  <strong>Puntos:</strong> {ui.selectedPersona.puntos ?? 0}
+                </p>
                 <div className="table-actions">
                   <Button onClick={() => abrirEdicion(ui.selectedPersona!)}>
                     Editar
