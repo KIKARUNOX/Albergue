@@ -1,10 +1,8 @@
 import { useReducer } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { defaultPermisosByRole } from "../lib/permissions";
 import { normalizeEmail, normalizeName } from "../lib/textNormalization";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,8 +50,6 @@ export default function Signup() {
   const navigate = useNavigate();
 
   const linkPersonaOnServer = async (payload: {
-    uid: string;
-    email: string;
     nombre: string;
     apellido1: string;
     apellido2: string;
@@ -68,8 +64,6 @@ export default function Signup() {
           authorization: `Bearer ${payload.idToken}`,
         },
         body: JSON.stringify({
-          uid: payload.uid,
-          email: payload.email,
           nombre: payload.nombre,
           apellido1: payload.apellido1,
           apellido2: payload.apellido2,
@@ -115,6 +109,46 @@ export default function Signup() {
     throw new Error("Respuesta invalida del servidor al vincular persona.");
   };
 
+  const createPersonaOnServer = async (payload: {
+    nombre: string;
+    apellido1: string;
+    apellido2: string;
+    idToken: string;
+  }): Promise<void> => {
+    let response: Response;
+    try {
+      response = await fetch("/api/register-persona", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${payload.idToken}`,
+        },
+        body: JSON.stringify({
+          nombre: payload.nombre,
+          apellido1: payload.apellido1,
+          apellido2: payload.apellido2,
+        }),
+      });
+    } catch {
+      throw new Error("No se pudo crear la persona en el servidor. Intenta de nuevo en unos minutos.");
+    }
+
+    const raw = await response.text();
+    let parsed: unknown = {};
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = {};
+      }
+    }
+
+    const data = parsed as { error?: string };
+    if (!response.ok) {
+      throw new Error(data.error || `No se pudo crear la persona en el servidor (HTTP ${response.status}).`);
+    }
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     dispatch({ type: "setError", value: "" });
@@ -154,12 +188,9 @@ export default function Signup() {
 
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
       const idToken = await userCredential.user.getIdToken();
 
       const linkResult = await linkPersonaOnServer({
-        uid,
-        email,
         nombre,
         apellido1,
         apellido2,
@@ -177,19 +208,11 @@ export default function Signup() {
       }
 
       if (linkResult.status === "no_match") {
-        // Si no hay match en backend, se crea una nueva persona para este usuario.
-        await addDoc(collection(db, "personas"), {
-          id: uid,
-          authUid: uid,
-          role: "joven",
-          permisos: defaultPermisosByRole("joven"),
+        await createPersonaOnServer({
           nombre: normalizeName(nombre),
           apellido1: normalizeName(apellido1),
           apellido2: normalizeName(apellido2),
-          email,
-          puntos: 0,
-          bautizado: false,
-          createdAt: new Date(),
+          idToken,
         });
       }
 

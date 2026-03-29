@@ -23,6 +23,24 @@ Variables esperadas:
 - `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
 - `VITE_FIRESTORE_DATABASE_ID` (opcional)
 
+Variables de servidor (Cloudflare Functions) para acceso seguro con Service Account:
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_WEB_API_KEY` (API key web de Firebase, usada solo para validar ID token en backend)
+- `FIRESTORE_DATABASE_ID` (opcional, por defecto `(default)`)
+- `FIREBASE_SERVICE_ACCOUNT_JSON` (JSON completo de la Service Account)
+
+Alternativa a `FIREBASE_SERVICE_ACCOUNT_JSON`:
+
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY` (con saltos de linea escapados como `\n`)
+
+Endpoints backend agregados para reducir operaciones sensibles en cliente:
+
+- `POST /api/bootstrap-session`
+- `POST /api/link-persona`
+- `POST /api/register-persona`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

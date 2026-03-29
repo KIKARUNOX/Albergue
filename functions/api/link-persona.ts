@@ -1,6 +1,4 @@
 type LinkPersonaRequest = {
-  uid?: string;
-  email?: string;
   nombre?: string;
   apellido1?: string;
   apellido2?: string;
@@ -15,6 +13,15 @@ type FirestoreDoc = {
   name: string;
   fields?: Record<string, { stringValue?: string }>;
 };
+
+import {
+  buildFirestoreBaseUrl,
+  fetchFirestoreJson,
+  getDatabaseId,
+  getGoogleAccessToken,
+  getProjectId,
+  verifyFirebaseIdToken,
+} from "./_firebaseAdmin";
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
@@ -41,16 +48,12 @@ function normalizedName(value?: string): string {
     .replace(/\s+/g, " ");
 }
 
-function getProjectId(env: Record<string, string | undefined>): string | null {
-  return env.FIREBASE_PROJECT_ID ?? env.VITE_FIREBASE_PROJECT_ID ?? null;
-}
-
 function getStringField(doc: FirestoreDoc, field: string): string {
   return doc.fields?.[field]?.stringValue ?? "";
 }
 
-async function queryPersonas(projectId: string, idToken: string): Promise<FirestoreDoc[]> {
-  const endpoint = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents:runQuery`;
+async function queryPersonas(baseUrl: string, accessToken: string): Promise<FirestoreDoc[]> {
+  const endpoint = `${baseUrl}:runQuery`;
   const payload = {
     structuredQuery: {
       from: [{ collectionId: "personas" }],
@@ -58,26 +61,15 @@ async function queryPersonas(projectId: string, idToken: string): Promise<Firest
     },
   };
 
-  const response = await fetch(endpoint, {
+  const rows = await fetchFirestoreJson<Array<{ document?: FirestoreDoc }>>(endpoint, accessToken, {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${idToken}`,
-      "content-type": "application/json",
-    },
     body: JSON.stringify(payload),
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Error consultando personas: ${response.status} ${body}`);
-  }
-
-  const rows = (await response.json()) as Array<{ document?: FirestoreDoc }>;
   return rows.flatMap((row) => (row.document ? [row.document] : []));
 }
 
 async function patchPersonaAuth(
-  idToken: string,
+  accessToken: string,
   docName: string,
   uid: string,
   email: string
@@ -95,46 +87,32 @@ async function patchPersonaAuth(
     },
   };
 
-  const response = await fetch(endpoint, {
+  await fetchFirestoreJson<Record<string, unknown>>(endpoint, accessToken, {
     method: "PATCH",
-    headers: {
-      authorization: `Bearer ${idToken}`,
-      "content-type": "application/json",
-    },
     body: JSON.stringify(payload),
   });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Error vinculando persona: ${response.status} ${body}`);
-  }
 }
 
 export async function onRequestPost(context: PagesContext): Promise<Response> {
   try {
     const projectId = getProjectId(context.env);
-    if (!projectId) {
-      return json({ error: "FIREBASE_PROJECT_ID no configurado en el servidor." }, 500);
-    }
-
-    const authorization = context.request.headers.get("authorization") ?? "";
-    const idToken = authorization.startsWith("Bearer ") ? authorization.slice("Bearer ".length) : "";
-    if (!idToken) {
-      return json({ error: "Token de autenticacion requerido." }, 401);
-    }
+    const databaseId = getDatabaseId(context.env);
+    const firestoreBaseUrl = buildFirestoreBaseUrl(projectId, databaseId);
+    const caller = await verifyFirebaseIdToken(context.request, context.env);
+    const accessToken = await getGoogleAccessToken(context.env);
 
     const body = (await context.request.json()) as LinkPersonaRequest;
-    const uid = normalize(body.uid);
-    const email = normalizedLower(body.email);
+    const uid = caller.uid;
+    const email = caller.email;
     const nombre = normalize(body.nombre);
     const apellido1 = normalize(body.apellido1);
     const apellido2 = normalize(body.apellido2);
 
-    if (!uid || !email || !nombre || !apellido1) {
-      return json({ error: "uid, email, nombre y apellido1 son obligatorios." }, 400);
+    if (!nombre || !apellido1) {
+      return json({ error: "nombre y apellido1 son obligatorios." }, 400);
     }
 
-    const docs = await queryPersonas(projectId, idToken);
+    const docs = await queryPersonas(firestoreBaseUrl, accessToken);
     const targetNombre = normalizedName(nombre);
     const targetApellido1 = normalizedName(apellido1);
     const targetApellido2 = normalizedName(apellido2);
@@ -194,10 +172,13 @@ export async function onRequestPost(context: PagesContext): Promise<Response> {
       );
     }
 
-    await patchPersonaAuth(idToken, match.name, uid, email);
+    await patchPersonaAuth(accessToken, match.name, uid, email);
     return json({ status: "linked", docName: match.name });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error interno";
+    if (message.toLowerCase().includes("token")) {
+      return json({ error: message }, 401);
+    }
     return json({ error: message }, 500);
   }
 }

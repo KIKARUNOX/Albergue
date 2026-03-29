@@ -15,8 +15,6 @@ import AppHeader from "./components/organisms/AppHeader";
 import AppNavigation from "./components/organisms/AppNavigation";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import { collection, doc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
-import { db } from "./firebase";
 import { buildPermisos, defaultPermisosByRole, normalizeRole } from "./lib/permissions";
 import type { PersonaDetalle } from "./type/persona";
 
@@ -46,95 +44,44 @@ function App() {
 
       const loadPersona = async () => {
         try {
-          const personasRef = collection(db, "personas");
-          let docFound: PersonaDetalle | null = null;
-          let docId = "";
+          const idToken = await u.getIdToken();
+          const response = await fetch("/api/bootstrap-session", {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${idToken}`,
+            },
+          });
 
-          const syncUsuarioAccessDoc = async (firebaseUser: User, personaData: PersonaDetalle | null, personaId: string) => {
-            const normalizedEmail = firebaseUser.email?.toLowerCase() ?? "";
-            const role = normalizeRole(personaData?.role);
-            const permisos = {
-              ...defaultPermisosByRole(role),
-              ...(personaData?.permisos ?? {}),
-            };
+          const raw = await response.text();
+          let parsed: unknown = {};
+          if (raw) {
+            try {
+              parsed = JSON.parse(raw);
+            } catch {
+              parsed = {};
+            }
+          }
 
-            await setDoc(
-              doc(db, "usuarios", firebaseUser.uid),
-              {
-                uid: firebaseUser.uid,
-                authUid: firebaseUser.uid,
-                email: normalizedEmail,
-                role,
-                permisos,
-                personaId,
-                updatedAt: new Date(),
-              },
-              { merge: true }
-            );
+          const data = parsed as {
+            persona?: PersonaDetalle | null;
+            personaDocId?: string;
+            error?: string;
           };
 
-          const syncPersonaUid = async (personaDocId: string, firebaseUser: User, currentData?: Partial<PersonaDetalle>) => {
-            const normalizedEmail = firebaseUser.email?.toLowerCase();
-            const shouldUpdateAuthUid = currentData?.authUid !== firebaseUser.uid;
-            const shouldUpdateLegacyId = currentData?.id !== firebaseUser.uid;
-            const shouldUpdateEmail = Boolean(normalizedEmail && currentData?.email !== normalizedEmail);
+          if (!response.ok) {
+            throw new Error(data.error || `No se pudo inicializar la sesion (HTTP ${response.status}).`);
+          }
 
-            if (!shouldUpdateAuthUid && !shouldUpdateLegacyId && !shouldUpdateEmail) {
-              return;
-            }
-
-            await updateDoc(doc(db, "personas", personaDocId), {
-              authUid: firebaseUser.uid,
-              id: firebaseUser.uid,
-              ...(normalizedEmail ? { email: normalizedEmail } : {}),
-            });
+          const docFound = data.persona ?? null;
+          const docId = data.personaDocId ?? "";
+          const role = normalizeRole(docFound?.role);
+          const permisos = {
+            ...defaultPermisosByRole(role),
+            ...(docFound?.permisos ?? {}),
           };
 
-          const byAuthUid = await getDocs(query(personasRef, where("authUid", "==", u.uid)));
-          if (!byAuthUid.empty) {
-            const match = byAuthUid.docs[0];
-            docFound = { id: match.id, ...match.data() } as PersonaDetalle;
-            docId = match.id;
-          }
-
-          if (!docFound && u.email) {
-            const byEmail = await getDocs(query(personasRef, where("email", "==", u.email.toLowerCase())));
-            if (!byEmail.empty) {
-              const match = byEmail.docs[0];
-              docFound = { id: match.id, ...match.data() } as PersonaDetalle;
-              docId = match.id;
-              await syncPersonaUid(docId, u, docFound);
-              docFound = {
-                ...docFound,
-                authUid: u.uid,
-                id: u.uid,
-                email: u.email.toLowerCase(),
-              } as PersonaDetalle;
-            }
-          }
-
-          if (!docFound) {
-            const byLegacyId = await getDocs(query(personasRef, where("id", "==", u.uid)));
-            if (!byLegacyId.empty) {
-              const match = byLegacyId.docs[0];
-              docFound = { id: match.id, ...match.data() } as PersonaDetalle;
-              docId = match.id;
-              await syncPersonaUid(docId, u, docFound);
-              docFound = {
-                ...docFound,
-                authUid: u.uid,
-                ...(u.email ? { email: u.email.toLowerCase() } : {}),
-              } as PersonaDetalle;
-            }
-          }
-
-          try {
-            await syncUsuarioAccessDoc(u, docFound, docId);
-          } catch (syncError) {
-            console.error("No se pudo sincronizar usuarios/{uid}:", syncError);
-          }
-
-          setPersona(docFound);
+          setPersona(docFound ? { ...docFound, permisos } : null);
           setPersonaDocId(docId);
         } catch (error) {
           console.error("Error cargando perfil de persona:", error);
