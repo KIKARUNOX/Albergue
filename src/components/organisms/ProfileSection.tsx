@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../../firebase";
 import type { ProfileSectionProps } from "../../type/componentProps";
@@ -58,7 +58,11 @@ export default function ProfileSection({
 
     setSaving(true);
     try {
-      await updateDoc(doc(db, "personas", personaId), {
+      await setDoc(doc(db, "personas", personaId), {
+        id: personaId,
+        authUid: persona.authUid ?? personaId,
+        role: role || "joven",
+        permisos: persona.permisos ?? {},
         nombre: nombreTrim,
         apellido1: apellido1.trim(),
         apellido2: apellido2.trim(),
@@ -66,7 +70,7 @@ export default function ProfileSection({
         telefono: telefonoTrim,
         localidad: localidad.trim(),
         fechaNacimiento,
-      });
+      }, { merge: true });
       await Swal.fire({
         icon: "success",
         title: "Perfil actualizado",

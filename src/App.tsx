@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ReactElement } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
@@ -18,11 +18,26 @@ import { signOut } from "firebase/auth";
 import { buildPermisos, defaultPermisosByRole, normalizeRole } from "./lib/permissions";
 import type { PersonaDetalle } from "./type/persona";
 
+function buildFallbackPersona(u: User): PersonaDetalle {
+  const normalizedEmail = (u.email ?? "").trim().toLowerCase();
+  const nombreFromDisplayName = (u.displayName ?? "").trim();
+  const nombreFromEmail = normalizedEmail.split("@")[0] ?? "";
+
+  return {
+    id: u.uid,
+    nombre: nombreFromDisplayName || nombreFromEmail || "Usuario",
+    email: normalizedEmail,
+    role: "joven",
+    permisos: defaultPermisosByRole("joven"),
+  };
+}
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [persona, setPersona] = useState<PersonaDetalle | null>(null);
   const [personaDocId, setPersonaDocId] = useState("");
   const [loading, setLoading] = useState(true);
+  const isBootstrapUnavailableRef = useRef(false);
 
   const handleLogout = async () => {
     try {
@@ -44,6 +59,12 @@ function App() {
 
       const loadPersona = async () => {
         try {
+          if (isBootstrapUnavailableRef.current) {
+            setPersona(buildFallbackPersona(u));
+            setPersonaDocId(u.uid);
+            return;
+          }
+
           const idToken = await u.getIdToken();
           const response = await fetch("/api/bootstrap-session", {
             method: "POST",
@@ -52,6 +73,13 @@ function App() {
               authorization: `Bearer ${idToken}`,
             },
           });
+
+          if (response.status === 404 || response.status === 405) {
+            isBootstrapUnavailableRef.current = true;
+            setPersona(buildFallbackPersona(u));
+            setPersonaDocId(u.uid);
+            return;
+          }
 
           const raw = await response.text();
           let parsed: unknown = {};
@@ -81,12 +109,17 @@ function App() {
             ...(docFound?.permisos ?? {}),
           };
 
-          setPersona(docFound ? { ...docFound, permisos } : null);
-          setPersonaDocId(docId);
+          if (docFound) {
+            setPersona({ ...docFound, permisos });
+            setPersonaDocId(docId);
+          } else {
+            setPersona(buildFallbackPersona(u));
+            setPersonaDocId(u.uid);
+          }
         } catch (error) {
           console.error("Error cargando perfil de persona:", error);
-          setPersona(null);
-          setPersonaDocId("");
+          setPersona(buildFallbackPersona(u));
+          setPersonaDocId(u.uid);
         } finally {
           setLoading(false);
         }
@@ -146,7 +179,9 @@ function App() {
             element={
               persona && personaDocId
                 ? <ProfilePage persona={persona} personaId={personaDocId} />
-                : <Navigate to="/" replace />
+                : user
+                  ? <ProfilePage persona={buildFallbackPersona(user)} personaId={user.uid} />
+                  : <Navigate to="/" replace />
             }
           />
           <Route path="/signup" element={<Navigate to="/" replace />} />
