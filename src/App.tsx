@@ -16,6 +16,7 @@ import AppNavigation from "./components/organisms/AppNavigation";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { buildPermisos, defaultPermisosByRole, normalizeRole } from "./lib/permissions";
+import { buildApiUrl } from "./lib/apiBase";
 import type { PersonaDetalle } from "./type/persona";
 
 function buildFallbackPersona(u: User): PersonaDetalle {
@@ -66,7 +67,7 @@ function App() {
           }
 
           const idToken = await u.getIdToken();
-          const response = await fetch("/api/bootstrap-session", {
+          const response = await fetch(buildApiUrl("/api/bootstrap-session"), {
             method: "POST",
             headers: {
               "content-type": "application/json",

@@ -22,6 +22,7 @@ Variables esperadas:
 - `VITE_FIREBASE_APP_ID`
 - `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
 - `VITE_FIRESTORE_DATABASE_ID` (opcional)
+- `VITE_API_BASE_URL` (opcional, para frontend en Cloudflare con backend externo; ejemplo: `https://us-central1-TU_PROYECTO.cloudfunctions.net`)
 
 Variables de servidor (Cloudflare Functions) para acceso seguro con Service Account:
 
@@ -40,6 +41,26 @@ Endpoints backend agregados para reducir operaciones sensibles en cliente:
 - `POST /api/bootstrap-session`
 - `POST /api/link-persona`
 - `POST /api/register-persona`
+
+## Cloudflare Pages (recomendado para /api)
+
+Para que funcionen los endpoints de `functions/api/*`, despliega en Cloudflare Pages (no solo Worker de assets).
+
+1. Crea un proyecto Pages llamado `codigo316`.
+2. Configura variables/secrets en Pages -> Settings -> Variables and Secrets.
+3. Despliega con:
+
+```bash
+npm run deploy:pages
+```
+
+En local puedes probar Pages + Functions con:
+
+```bash
+npm run dev:pages
+```
+
+Si usas solo `wrangler deploy` en modo Worker de assets, los `POST /api/*` pueden responder 405.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

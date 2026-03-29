@@ -4,6 +4,7 @@ import { auth } from "../firebase";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { normalizeEmail, normalizeName } from "../lib/textNormalization";
+import { buildApiUrl } from "../lib/apiBase";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -65,7 +66,7 @@ export default function Signup() {
   }> => {
     let response: Response;
     try {
-      response = await fetch("/api/link-persona", {
+      response = await fetch(buildApiUrl("/api/link-persona"), {
         method: "POST",
         headers: {
           "content-type": "application/json",
@@ -134,7 +135,7 @@ export default function Signup() {
   }): Promise<void> => {
     let response: Response;
     try {
-      response = await fetch("/api/register-persona", {
+      response = await fetch(buildApiUrl("/api/register-persona"), {
         method: "POST",
         headers: {
           "content-type": "application/json",
