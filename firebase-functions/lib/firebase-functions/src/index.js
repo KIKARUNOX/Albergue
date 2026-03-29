@@ -4,17 +4,21 @@ import { onRequestPost as onBootstrapSessionPost, } from "../../functions/api/bo
 import { onRequestPost as onLinkPersonaPost, } from "../../functions/api/link-persona.js";
 import { onRequestPost as onRegisterPersonaPost, } from "../../functions/api/register-persona.js";
 const app = express();
-app.use(express.json());
 app.use((req, res, next) => {
     res.setHeader("access-control-allow-origin", "*");
     res.setHeader("access-control-allow-methods", "POST, OPTIONS");
     res.setHeader("access-control-allow-headers", "content-type, authorization");
+    res.setHeader("vary", "origin");
     if (req.method === "OPTIONS") {
         res.status(204).send("");
         return;
     }
     next();
 });
+app.options("*", (_req, res) => {
+    res.status(204).send("");
+});
+app.use(express.json());
 function collectEnv() {
     return {
         FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
@@ -80,6 +84,9 @@ function attachPostRoute(path, handler) {
         res.status(405).json({ error: "Method Not Allowed" });
     });
 }
+attachPostRoute("/bootstrap-session", onBootstrapSessionPost);
+attachPostRoute("/link-persona", onLinkPersonaPost);
+attachPostRoute("/register-persona", onRegisterPersonaPost);
 attachPostRoute("/api/bootstrap-session", onBootstrapSessionPost);
 attachPostRoute("/api/link-persona", onLinkPersonaPost);
 attachPostRoute("/api/register-persona", onRegisterPersonaPost);

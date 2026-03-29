@@ -24,12 +24,12 @@ type PagesContext = {
 type CloudflarePostHandler = (context: PagesContext) => Promise<Response>;
 
 const app = express();
-app.use(express.json());
 
 app.use((req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
   res.setHeader("access-control-allow-origin", "*");
   res.setHeader("access-control-allow-methods", "POST, OPTIONS");
   res.setHeader("access-control-allow-headers", "content-type, authorization");
+  res.setHeader("vary", "origin");
 
   if (req.method === "OPTIONS") {
     res.status(204).send("");
@@ -38,6 +38,12 @@ app.use((req: ExpressRequest, res: ExpressResponse, next: NextFunction) => {
 
   next();
 });
+
+app.options("*", (_req: ExpressRequest, res: ExpressResponse) => {
+  res.status(204).send("");
+});
+
+app.use(express.json());
 
 function collectEnv(): EnvMap {
   return {
@@ -112,6 +118,10 @@ function attachPostRoute(path: string, handler: CloudflarePostHandler): void {
     res.status(405).json({ error: "Method Not Allowed" });
   });
 }
+
+attachPostRoute("/bootstrap-session", onBootstrapSessionPost);
+attachPostRoute("/link-persona", onLinkPersonaPost);
+attachPostRoute("/register-persona", onRegisterPersonaPost);
 
 attachPostRoute("/api/bootstrap-session", onBootstrapSessionPost);
 attachPostRoute("/api/link-persona", onLinkPersonaPost);
