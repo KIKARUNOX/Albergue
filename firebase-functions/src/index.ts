@@ -135,6 +135,7 @@ export const api = onRequest(
   {
     region: "us-central1",
     maxInstances: 10,
+    cors: true,
   },
   app
 );

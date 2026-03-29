@@ -84,6 +84,7 @@ Pasos de despliegue del backend Firebase:
 ```bash
 cd firebase-functions
 npm install
+npx firebase login
 cd ..
 npm run firebase:functions:deploy
 ```
