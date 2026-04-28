@@ -49,8 +49,8 @@ export default function AboutUsSection() {
           <h3>Ponte en contacto</h3>
           <ul className="about-us-links">
             <li>
-              <a href="mailto:jovenesdeimpactoagape@hotmail.com">
-                jovenesdeimpactoagape@hotmail.com
+              <a href="mailto:red.codigo3.16@gmail.com">
+                red.codigo3.16@gmail.com
               </a>
             </li>
           </ul>
