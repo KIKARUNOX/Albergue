@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db, auth } from "../../firebase";
 import Swal from "sweetalert2";
 import type { Evento } from "../../type/evento";
 import "./EventosManagementSection.css";
@@ -10,6 +10,8 @@ export default function EventosManagementSection() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     fecha: "",
@@ -45,6 +47,87 @@ export default function EventosManagementSection() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const uploadImageToServer = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const response = await fetch("/api/upload-evento-image", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${idToken || ""}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Error uploading image");
+      }
+
+      const data = (await response.json()) as { url: string };
+      return data.url;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      throw new Error(`No se pudo subir la imagen: ${message}`);
+    }
+  };
+
+  const handleImageUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    setUploadingImages(true);
+    try {
+      const validFiles = files.filter((file) => file.type.startsWith("image/"));
+
+      if (validFiles.length === 0) {
+        Swal.fire({ icon: "warning", title: "Error", text: "Por favor selecciona solo imágenes" });
+        return;
+      }
+
+      for (const file of validFiles) {
+        try {
+          const url = await uploadImageToServer(file);
+          setFormData((prev) => ({
+            ...prev,
+            imagenes: prev.imagenes ? `${prev.imagenes}\n${url}` : url,
+          }));
+        } catch (error) {
+          console.error("Error uploading image:", error);
+          Swal.fire({
+            icon: "error",
+            title: "Error al subir imagen",
+            text: error instanceof Error ? error.message : "Error desconocido",
+          });
+        }
+      }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    handleImageUpload(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const files = Array.from(e.dataTransfer.files);
+    handleImageUpload(files);
+  };
+
   const validarFormulario = (): boolean => {
     if (!formData.fecha.trim()) {
       Swal.fire({ icon: "warning", title: "Fecha requerida", text: "Ingresa una fecha válida" });
@@ -55,7 +138,11 @@ export default function EventosManagementSection() {
       return false;
     }
     if (!formData.imagenes.trim()) {
-      Swal.fire({ icon: "warning", title: "Imágenes requeridas", text: "Ingresa al menos una URL de imagen" });
+      Swal.fire({ 
+        icon: "warning", 
+        title: "Imágenes requeridas", 
+        text: "Carga o pega al menos una imagen" 
+      });
       return false;
     }
     return true;
@@ -216,22 +303,64 @@ export default function EventosManagementSection() {
               </div>
 
               <div>
-                <label>URLs de Imágenes (una por línea)</label>
-                <textarea
-                  name="imagenes"
-                  placeholder={
-                    "Pega aquí las URLs de Google Drive o imágenes\n\n" +
-                    "Se convierten automáticamente:\n" +
-                    "• Enlace compartible: paste aquí y se convierte\n" +
-                    "• URL directa: también funciona\n\n" +
-                    "Ejemplo:\n" +
-                    "https://drive.google.com/file/d/ABC123/view..."
-                  }
-                  value={formData.imagenes}
-                  onChange={handleInputChange}
-                  rows={6}
-                  required
-                />
+                <label>Imágenes</label>
+                <div
+                  className="image-upload-area"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    style={{ display: "none" }}
+                    disabled={uploadingImages}
+                  />
+                  <div className="upload-content">
+                    <span className="upload-icon">📸</span>
+                    <p className="upload-text">
+                      {uploadingImages ? "Cargando imágenes..." : "Arrastra imágenes aquí o haz clic para seleccionar"}
+                    </p>
+                    <p className="upload-hint">Puedes cargar múltiples imágenes a la vez</p>
+                  </div>
+                </div>
+                
+                {formData.imagenes && (
+                  <div className="images-preview">
+                    <p className="preview-title">URLs de imágenes cargadas:</p>
+                    <div className="images-list">
+                      {formData.imagenes.split("\n").filter((url) => url.trim()).map((url, idx) => (
+                        <div key={idx} className="image-item">
+                          <span className="image-url">{url.substring(0, 50)}...</span>
+                          <button
+                            type="button"
+                            className="btn-remove"
+                            onClick={() => {
+                              const urls = formData.imagenes.split("\n").filter((_, i) => i !== idx);
+                              setFormData((prev) => ({ ...prev, imagenes: urls.join("\n") }));
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="manual-url-section">
+                  <label className="secondary-label">O pega URLs manualmente (una por línea)</label>
+                  <textarea
+                    name="imagenes"
+                    placeholder="https://drive.google.com/..."
+                    value={formData.imagenes}
+                    onChange={handleInputChange}
+                    rows={3}
+                  />
+                </div>
               </div>
 
               <div className="modal-actions">
