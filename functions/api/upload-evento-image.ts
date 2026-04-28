@@ -2,7 +2,7 @@ import {
   buildFirestoreBaseUrl,
   fetchFirestoreJson,
   getDatabaseId,
-  getGoogleAccessToken,
+  getGoogleDriveAccessToken,
   getProjectId,
 } from "./_firebaseAdmin";
 
@@ -123,7 +123,7 @@ export async function onRequest(context: PagesContext): Promise<Response> {
       );
     }
 
-    const accessToken = await getGoogleAccessToken(context.env);
+    const accessToken = await getGoogleDriveAccessToken(context.env);
     const timestamp = Date.now();
     const fileName = `evento-${timestamp}-${file.name}`;
     const fileBuffer = await file.arrayBuffer();
