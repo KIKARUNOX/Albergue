@@ -67,14 +67,17 @@ async function uploadToDrive(
   offset += fileBuffer.byteLength;
   body.set(new Uint8Array(endPartBytes), offset);
 
-  const response = await fetch(`${DRIVE_API_UPLOAD}?uploadType=multipart`, {
+const response = await fetch(
+  `${DRIVE_API_UPLOAD}?uploadType=multipart&supportsAllDrives=true`,
+  {
     method: "POST",
     headers: {
       authorization: `Bearer ${accessToken}`,
       "content-type": `multipart/related; boundary="${boundary}"`,
     },
     body: body,
-  });
+  }
+);
 
   if (!response.ok) {
     const errorText = await response.text();
