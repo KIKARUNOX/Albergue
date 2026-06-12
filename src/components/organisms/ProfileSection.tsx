@@ -4,6 +4,8 @@ import Swal from "sweetalert2";
 import { db } from "../../firebase";
 import type { ProfileSectionProps } from "../../type/componentProps";
 import Button from "../atoms/Button";
+import Input from "../atoms/Input";
+import Label from "../atoms/Label";
 import PageSection from "../templates/PageSection";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -92,7 +94,7 @@ export default function ProfileSection({
     <PageSection title="Mi perfil">
       <div className="stack-sm">
         <p className="small-text">Rol actual: {role}</p>
-        <input
+        <Input
           type="text"
           required
           minLength={2}
@@ -100,45 +102,45 @@ export default function ProfileSection({
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
         />
-        <input
+        <Input
           type="text"
           placeholder="Primer apellido"
           value={apellido1}
           onChange={(e) => setApellido1(e.target.value)}
         />
-        <input
+        <Input
           type="text"
           placeholder="Segundo apellido"
           value={apellido2}
           onChange={(e) => setApellido2(e.target.value)}
         />
-        <input
+        <Input
           type="email"
           placeholder="Correo"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <input
+        <Input
           type="tel"
           pattern="[0-9+()\s-]{7,20}"
           placeholder="Telefono"
           value={telefono}
           onChange={(e) => setTelefono(e.target.value)}
         />
-        <input
+        <Input
           type="text"
           placeholder="Localidad"
           value={localidad}
           onChange={(e) => setLocalidad(e.target.value)}
         />
-        <label>
+        <Label>
           Fecha de nacimiento
-          <input
+          <Input
             type="date"
             value={fechaNacimiento}
             onChange={(e) => setFechaNacimiento(e.target.value)}
           />
-        </label>
+        </Label>
         <Button onClick={() => void saveProfile()} disabled={saving}>
           {saving ? "Guardando..." : "Guardar perfil"}
         </Button>

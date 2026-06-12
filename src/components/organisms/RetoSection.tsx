@@ -1,5 +1,9 @@
 import type { RetoSectionProps } from "../../type/componentProps";
 import Button from "../atoms/Button";
+import Input from "../atoms/Input";
+import Label from "../atoms/Label";
+import Select from "../atoms/Select";
+import TextArea from "../atoms/TextArea";
 import PersonCheckboxGrid from "../molecules/PersonCheckboxGrid";
 import PageSection from "../templates/PageSection";
 
@@ -20,9 +24,9 @@ export default function RetoSection({
 }: RetoSectionProps) {
   return (
     <PageSection title="Agregar reto a asistencia">
-      <label>
+      <Label>
         Selecciona asistencia
-        <select
+        <Select
           value={selectedAsistenciaId}
           onChange={(e) => onSelectedAsistenciaId(e.target.value)}
         >
@@ -33,11 +37,11 @@ export default function RetoSection({
               {a.reto ? "Con reto" : ""}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Label>
 
       <div className="stack-sm">
-        <input
+        <Input
           type="text"
           placeholder="Nombre del reto *"
           value={nombreReto}
@@ -45,7 +49,7 @@ export default function RetoSection({
           maxLength={80}
           onChange={(e) => onNombreReto(e.target.value)}
         />
-        <input
+        <Input
           type="number"
           min={1}
           step={1}
@@ -55,7 +59,7 @@ export default function RetoSection({
             onPuntosReto(Math.max(1, Math.floor(Number(e.target.value) || 1)))
           }
         />
-        <textarea
+        <TextArea
           placeholder="Descripcion del reto *"
           value={descripcionReto}
           required

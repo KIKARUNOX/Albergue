@@ -1,16 +1,18 @@
 import { useState } from "react";
-import StatusMessage from "./atoms/StatusMessage";
-import Button from "./atoms/Button";
-import Modal from "./atoms/Modal";
-import PersonCheckboxGrid from "./molecules/PersonCheckboxGrid";
-import AsistenciaCreationSection from "./organisms/AsistenciaCreationSection";
-import RetoSection from "./organisms/RetoSection";
-import AsistenciasListSection from "./organisms/AsistenciasListSection";
-import InasistentesSection from "./organisms/InasistentesSection";
-import ProximoRetoManagementSection from "./organisms/ProximoRetoManagementSection";
-import useAsistenciaPage from "../hooks/useAsistenciaPage";
+import StatusMessage from "../atoms/StatusMessage";
+import Button from "../atoms/Button";
+import Input from "../atoms/Input";
+import Label from "../atoms/Label";
+import Modal from "../atoms/Modal";
+import PersonCheckboxGrid from "../molecules/PersonCheckboxGrid";
+import AsistenciaCreationSection from "../organisms/AsistenciaCreationSection";
+import RetoSection from "../organisms/RetoSection";
+import AsistenciasListSection from "../organisms/AsistenciasListSection";
+import InasistentesSection from "../organisms/InasistentesSection";
+import ProximoRetoManagementSection from "../organisms/ProximoRetoManagementSection";
+import useAsistenciaPage from "../../hooks/useAsistenciaPage";
 
-export default function AsistenciaPage() {
+export default function AsistenciaTemplate() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRetoModal, setShowRetoModal] = useState(false);
   const [showProximoRetoModal, setShowProximoRetoModal] = useState(false);
@@ -123,7 +125,6 @@ export default function AsistenciaPage() {
         />
       </Modal>
 
-      {/* Modal para crear asistencia */}
       <Modal
         isOpen={showCreateModal}
         title="Agregar asistencia"
@@ -147,7 +148,6 @@ export default function AsistenciaPage() {
         />
       </Modal>
 
-      {/* Modal para agregar reto */}
       <Modal
         isOpen={showRetoModal}
         title="Agregar reto"
@@ -214,7 +214,6 @@ export default function AsistenciaPage() {
         threshold={3}
       />
 
-      {/* Modal para ver detalles de asistencia */}
       <Modal
         isOpen={showDetailsModal}
         title={`Detalle de asistencia${selectedAsistenciaForDetails ? ` (${asistencias.find((a) => a.id === selectedAsistenciaForDetails)?.fecha || ""})` : ""}`}
@@ -278,7 +277,6 @@ export default function AsistenciaPage() {
           )}
       </Modal>
 
-      {/* Modal para editar asistencia */}
       <Modal
         isOpen={showEditModal}
         title={`Editar asistencia${selectedAsistenciaForEdit ? ` (${asistencias.find((a) => a.id === selectedAsistenciaForEdit)?.fecha || ""})` : ""}`}
@@ -292,14 +290,14 @@ export default function AsistenciaPage() {
         {selectedAsistenciaForEdit &&
           asistencias.find((a) => a.id === selectedAsistenciaForEdit) && (
             <div className="stack-sm">
-              <label>
+              <Label>
                 Fecha
-                <input
+                <Input
                   type="date"
                   value={editFecha}
                   onChange={(e) => setEditFecha(e.target.value)}
                 />
-              </label>
+              </Label>
               <p>
                 <strong>Personas asistentes</strong>
               </p>

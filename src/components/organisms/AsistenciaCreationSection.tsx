@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import type { AsistenciaCreationSectionProps } from "../../type/componentProps";
 import Button from "../atoms/Button";
+import Input from "../atoms/Input";
+import Label from "../atoms/Label";
 import PersonCheckboxGrid from "../molecules/PersonCheckboxGrid";
 import PageSection from "../templates/PageSection";
 
@@ -28,19 +30,19 @@ export default function AsistenciaCreationSection({
   return (
     <PageSection title="Nueva asistencia (sabado)">
       <div className="stack-sm">
-        <label>
+        <Label>
           Fecha
-          <input type="date" required value={fecha} onChange={(e) => onFechaChange(e.target.value)} />
-        </label>
-        <label>
+          <Input type="date" required value={fecha} onChange={(e) => onFechaChange(e.target.value)} />
+        </Label>
+        <Label>
           Buscar por nombre
-          <input
+          <Input
             type="text"
             placeholder="Ej. Steven Ramirez"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
-        </label>
+        </Label>
       </div>
 
       <h3>Personas asistentes</h3>

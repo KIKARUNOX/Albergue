@@ -12,6 +12,11 @@ import { db } from "../../firebase";
 import type { Evento, EventoComentario } from "../../type/evento";
 import type { PersonaDetalle } from "../../type/persona";
 import "./NextSaturdaySection.css";
+import EventImageGallery from "../molecules/EventImageGallery";
+import ComentarioItem from "../molecules/ComentarioItem";
+import ComentarioModal from "./ComentarioModal";
+import Spinner from "../atoms/Spinner";
+import Button from "../atoms/Button";
 
 type NextSaturdaySectionProps = {
   persona: PersonaDetalle | null;
@@ -22,64 +27,19 @@ type EventoWithDocId = Evento & { docId: string };
 export default function NextSaturdaySection({ persona }: NextSaturdaySectionProps) {
   const [evento, setEvento] = useState<EventoWithDocId | null>(null);
   const [loading, setLoading] = useState(true);
-  const [comentario, setComentario] = useState("");
-  const [enviandoComentario, setEnviandoComentario] = useState(false);
   const [showComentarioModal, setShowComentarioModal] = useState(false);
-  const [editingComentarioId, setEditingComentarioId] = useState<string | null>(null);
-  const [editingTexto, setEditingTexto] = useState("");
-  const [savingEdicion, setSavingEdicion] = useState(false);
-  const [deletingComentarioId, setDeletingComentarioId] = useState<string | null>(null);
-  const [intentosPorImagen, setIntentosPorImagen] = useState<
-    Record<number, number>
-  >({});
-  const [imagenesFallidas, setImagenesFallidas] = useState<
-    Record<number, boolean>
-  >({});
-
-  const extraerDriveId = (url: string): string | null => {
-    try {
-      const parsed = new URL(url);
-      const idFromParam = parsed.searchParams.get("id");
-      if (idFromParam) return idFromParam;
-    } catch {
-      // Ignore malformed URL.
-    }
-
-    const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-    if (match?.[1]) return match[1];
-
-    const openMatch = url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
-    return openMatch?.[1] ?? null;
-  };
-
-  const construirCandidatas = (url: string): string[] => {
-    const driveId = extraerDriveId(url);
-    if (!driveId) return [url];
-
-    return [
-      `https://drive.usercontent.google.com/download?id=${driveId}&export=view`,
-      `https://drive.google.com/thumbnail?id=${driveId}&sz=w2000`,
-      `https://lh3.googleusercontent.com/d/${driveId}=w2000`,
-      `https://drive.google.com/uc?export=download&id=${driveId}`,
-      `https://drive.google.com/uc?export=view&id=${driveId}`,
-      `https://drive.google.com/uc?id=${driveId}`,
-    ];
-  };
 
   useEffect(() => {
     const obtenerProximoEvento = async () => {
       setLoading(true);
       try {
-        // Obtener todos los eventos
         const q = query(collection(db, "eventos"), orderBy("fecha", "asc"));
         const querySnapshot = await getDocs(q);
 
-        // Hoy en formato YYYY-MM-DD
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
         const fechaHoy = hoy.toISOString().split("T")[0];
 
-        // Filtrar solo eventos futuros (no pasados)
         const eventosFuturos = querySnapshot.docs
           .map((doc) => ({
             docId: doc.id,
@@ -91,7 +51,6 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
           );
 
         if (eventosFuturos.length > 0) {
-          // Mostrar el evento más cercano
           setEvento(eventosFuturos[0]);
         }
       } catch (error) {
@@ -118,15 +77,8 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
     (normalizedRole === "lider" || normalizedRole === "coordinador" || normalizedRole === "cordinador")
     && Boolean(persona?.permisos?.gestionarPermisos);
 
-  const enviarComentario = async () => {
-    if (!evento || !persona?.id) {
-      return;
-    }
-
-    const texto = comentario.trim();
-    if (!texto) {
-      return;
-    }
+  const enviarComentario = async (texto: string) => {
+    if (!evento || !persona?.id) return;
 
     const nuevoComentario: EventoComentario = {
       id: crypto.randomUUID(),
@@ -136,110 +88,49 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
       createdAt: new Date().toISOString(),
     };
 
-    setEnviandoComentario(true);
-    try {
-      const eventoRef = doc(db, "eventos", evento.docId);
-      await updateDoc(eventoRef, {
-        comentarios: arrayUnion(nuevoComentario),
-      });
+    const eventoRef = doc(db, "eventos", evento.docId);
+    await updateDoc(eventoRef, {
+      comentarios: arrayUnion(nuevoComentario),
+    });
 
-      setEvento((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          comentarios: [...(prev.comentarios ?? []), nuevoComentario],
-        };
-      });
-      setComentario("");
-      setShowComentarioModal(false);
-    } catch (error) {
-      console.error("Error al enviar comentario:", error);
-    } finally {
-      setEnviandoComentario(false);
-    }
+    setEvento((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        comentarios: [...(prev.comentarios ?? []), nuevoComentario],
+      };
+    });
   };
 
-  const iniciarEdicionComentario = (item: EventoComentario) => {
-    setEditingComentarioId(item.id);
-    setEditingTexto(item.texto);
-  };
-
-  const cancelarEdicionComentario = () => {
-    setEditingComentarioId(null);
-    setEditingTexto("");
-  };
-
-  const guardarEdicionComentario = async () => {
-    if (!evento || !persona?.id || !editingComentarioId) {
-      return;
-    }
-
-    const nuevoTexto = editingTexto.trim();
-    if (!nuevoTexto) {
-      return;
-    }
-
-    const original = (evento.comentarios ?? []).find((c) => c.id === editingComentarioId);
-    if (!original || original.autorId !== persona.id) {
-      return;
-    }
+  const editarComentario = async (commentId: string, nuevoTexto: string) => {
+    if (!evento || !persona?.id) return;
 
     const updatedComentarios = (evento.comentarios ?? []).map((item) => {
-      if (item.id !== editingComentarioId) {
-        return item;
-      }
+      if (item.id !== commentId || item.autorId !== persona.id) return item;
       return { ...item, texto: nuevoTexto };
     });
 
-    setSavingEdicion(true);
-    try {
-      const eventoRef = doc(db, "eventos", evento.docId);
-      await updateDoc(eventoRef, {
-        comentarios: updatedComentarios,
-      });
+    const eventoRef = doc(db, "eventos", evento.docId);
+    await updateDoc(eventoRef, { comentarios: updatedComentarios });
 
-      setEvento((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          comentarios: updatedComentarios,
-        };
-      });
-
-      cancelarEdicionComentario();
-    } catch (error) {
-      console.error("Error al editar comentario:", error);
-    } finally {
-      setSavingEdicion(false);
-    }
+    setEvento((prev) => {
+      if (!prev) return prev;
+      return { ...prev, comentarios: updatedComentarios };
+    });
   };
 
   const eliminarComentario = async (commentId: string) => {
-    if (!evento || !canModerateComments) {
-      return;
-    }
+    if (!evento || !canModerateComments) return;
 
     const updatedComentarios = (evento.comentarios ?? []).filter((item) => item.id !== commentId);
 
-    setDeletingComentarioId(commentId);
-    try {
-      const eventoRef = doc(db, "eventos", evento.docId);
-      await updateDoc(eventoRef, {
-        comentarios: updatedComentarios,
-      });
+    const eventoRef = doc(db, "eventos", evento.docId);
+    await updateDoc(eventoRef, { comentarios: updatedComentarios });
 
-      setEvento((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          comentarios: updatedComentarios,
-        };
-      });
-    } catch (error) {
-      console.error("Error al eliminar comentario:", error);
-    } finally {
-      setDeletingComentarioId(null);
-    }
+    setEvento((prev) => {
+      if (!prev) return prev;
+      return { ...prev, comentarios: updatedComentarios };
+    });
   };
 
   if (loading) {
@@ -248,7 +139,7 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
         <div className="saturday-header">
           <h2>Próximos Eventos</h2>
         </div>
-        <p className="loading">Cargando...</p>
+        <Spinner />
       </section>
     );
   }
@@ -285,93 +176,16 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
         )}
       </div>
 
-      {showComentarioModal ? (
-        <div className="comentario-modal-overlay" onClick={() => setShowComentarioModal(false)}>
-          <div className="comentario-modal" onClick={(e) => e.stopPropagation()}>
-            <h4>Dejar comentario</h4>
-            <textarea
-              placeholder="Escribe tu comentario..."
-              value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-              rows={4}
-              maxLength={300}
-            />
-            <div className="comentario-modal-actions">
-              <button
-                className="btn-secondary"
-                type="button"
-                onClick={() => setShowComentarioModal(false)}
-                disabled={enviandoComentario}
-              >
-                Cancelar
-              </button>
-              <button
-                className="btn-primary"
-                type="button"
-                onClick={() => void enviarComentario()}
-                disabled={enviandoComentario || !comentario.trim()}
-              >
-                {enviandoComentario ? "Enviando..." : "Publicar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {evento.imagenes && evento.imagenes.length > 0 && (
-        <div className="imagenes-grid">
-          {evento.imagenes.map((imagen, index) => (
-            <div key={index} className="imagen-container">
-              {(() => {
-                const candidatas = construirCandidatas(imagen);
-                const intentoActual = intentosPorImagen[index] ?? 0;
-                const srcActual =
-                  candidatas[Math.min(intentoActual, candidatas.length - 1)];
-                const fallida = Boolean(imagenesFallidas[index]);
-
-                return fallida ? (
-                  <p className="no-evento">
-                    No se pudo cargar la imagen (Drive requiere enlace publico).
-                  </p>
-                ) : (
-                  <img
-                    src={srcActual}
-                    alt={`Evento ${evento.titulo} - Imagen ${index + 1}`}
-                    className="evento-imagen"
-                    referrerPolicy="no-referrer"
-                    onError={() => {
-                      setIntentosPorImagen((prev) => {
-                        const siguiente = (prev[index] ?? 0) + 1;
-                        if (siguiente >= candidatas.length) {
-                          setImagenesFallidas((prevFail) => ({
-                            ...prevFail,
-                            [index]: true,
-                          }));
-                          return prev;
-                        }
-                        return { ...prev, [index]: siguiente };
-                      });
-                    }}
-                  />
-                );
-              })()}
-            </div>
-          ))}
-        </div>
-      )}
+      <EventImageGallery imagenes={evento.imagenes} titulo={evento.titulo} />
 
       <div className="evento-comentarios">
         <h4>Comentarios</h4>
 
         {persona?.id ? (
           <div className="comentario-actions">
-            <button
-              className="btn-primary"
-              type="button"
-              onClick={() => setShowComentarioModal(true)}
-            >
+            <Button onClick={() => setShowComentarioModal(true)}>
               Dejar comentario
-            </button>
+            </Button>
           </div>
         ) : (
           <p className="no-evento">Inicia sesión para comentar.</p>
@@ -382,72 +196,24 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
         ) : (
           <ul className="comentarios-list">
             {comentariosOrdenados.map((item) => (
-              <li key={item.id} className="comentario-item">
-                <p className="comentario-meta">
-                  <strong>{item.autorNombre}</strong>
-                  {" · "}
-                  {new Date(item.createdAt).toLocaleString("es-ES")}
-                </p>
-
-                {editingComentarioId === item.id ? (
-                  <div className="comentario-edit-box">
-                    <textarea
-                      value={editingTexto}
-                      onChange={(e) => setEditingTexto(e.target.value)}
-                      rows={3}
-                      maxLength={300}
-                    />
-                    <div className="comentario-actions-row">
-                      <button
-                        className="btn-secondary"
-                        type="button"
-                        onClick={cancelarEdicionComentario}
-                        disabled={savingEdicion}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        className="btn-primary"
-                        type="button"
-                        onClick={() => void guardarEdicionComentario()}
-                        disabled={savingEdicion || !editingTexto.trim()}
-                      >
-                        {savingEdicion ? "Guardando..." : "Guardar"}
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <p className="comentario-texto">{item.texto}</p>
-                    <div className="comentario-actions-row">
-                      {persona?.id === item.autorId ? (
-                        <button
-                          className="btn-secondary"
-                          type="button"
-                          onClick={() => iniciarEdicionComentario(item)}
-                        >
-                          Editar
-                        </button>
-                      ) : null}
-
-                      {canModerateComments ? (
-                        <button
-                          className="btn-secondary"
-                          type="button"
-                          onClick={() => void eliminarComentario(item.id)}
-                          disabled={deletingComentarioId === item.id}
-                        >
-                          {deletingComentarioId === item.id ? "Borrando..." : "Borrar"}
-                        </button>
-                      ) : null}
-                    </div>
-                  </>
-                )}
-              </li>
+              <ComentarioItem
+                key={item.id}
+                item={item}
+                currentUserId={persona?.id ?? ""}
+                canDelete={canModerateComments}
+                onEdit={editarComentario}
+                onDelete={eliminarComentario}
+              />
             ))}
           </ul>
         )}
       </div>
+
+      <ComentarioModal
+        isOpen={showComentarioModal}
+        onClose={() => setShowComentarioModal(false)}
+        onEnviar={enviarComentario}
+      />
     </section>
   );
 }

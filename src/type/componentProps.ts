@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes, ReactNode } from "react";
 import type { Asistencia, Persona } from "./asistencia";
 import type { PersonaDetalle, PersonaPermisos } from "./persona";
 
@@ -8,6 +8,23 @@ export type ButtonProps = {
   children: ReactNode;
   variant?: ButtonVariant;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
+
+export type InputProps = InputHTMLAttributes<HTMLInputElement>;
+
+export type LabelProps = {
+  children: ReactNode;
+  htmlFor?: string;
+  required?: boolean;
+  className?: string;
+};
+
+export type SelectProps = SelectHTMLAttributes<HTMLSelectElement>;
+
+export type TextAreaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
+
+export type SpinnerProps = {
+  text?: string;
+};
 
 export type StatusMessageProps = {
   message: string;

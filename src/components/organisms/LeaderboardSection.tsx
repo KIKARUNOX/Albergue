@@ -204,20 +204,20 @@ export default function LeaderboardSection({ limit, showControls = true }: Leade
     <PageSection title={title}>
       {leaderboardData.error ? <p className="form-message error">{leaderboardData.error}</p> : null}
       <div className="leaderboard-switch" role="tablist" aria-label="Tipo de ranking">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           className={`leaderboard-switch-btn${viewMode === "all-time" ? " is-active" : ""}`}
           onClick={() => setViewMode("all-time")}
         >
           Todos los tiempos
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           className={`leaderboard-switch-btn${viewMode === "monthly" ? " is-active" : ""}`}
           onClick={() => setViewMode("monthly")}
         >
           Este mes
-        </button>
+        </Button>
       </div>
       {viewMode === "monthly" ? (
         <p className="small-text">Periodo: {monthLabel}</p>

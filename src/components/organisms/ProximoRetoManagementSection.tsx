@@ -1,5 +1,7 @@
 import type { ProximoRetoManagementSectionProps } from "../../type/componentProps";
 import Button from "../atoms/Button";
+import Input from "../atoms/Input";
+import TextArea from "../atoms/TextArea";
 import PageSection from "../templates/PageSection";
 
 export default function ProximoRetoManagementSection({
@@ -36,14 +38,14 @@ export default function ProximoRetoManagementSection({
       </div>
 
       <div className="stack-sm">
-        <input
+        <Input
           type="text"
           placeholder="Nombre del reto"
           value={nombre}
           maxLength={80}
           onChange={(e) => onNombre(e.target.value)}
         />
-        <input
+        <Input
           type="number"
           min={1}
           step={1}
@@ -53,7 +55,7 @@ export default function ProximoRetoManagementSection({
             onPuntos(Math.max(1, Math.floor(Number(e.target.value) || 1)))
           }
         />
-        <textarea
+        <TextArea
           placeholder="Descripcion del reto"
           value={descripcion}
           maxLength={280}

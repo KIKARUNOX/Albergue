@@ -1,5 +1,5 @@
-import AsistenciaPage from "../AsistenciaPage";
+import AsistenciaTemplate from "../templates/AsistenciaTemplate";
 
 export default function AsistenciaPageView() {
-  return <AsistenciaPage />;
+  return <AsistenciaTemplate />;
 }

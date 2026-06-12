@@ -3,11 +3,10 @@ import type { FormEvent } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import Swal from "sweetalert2";
 import { auth } from "../firebase";
-import { Link } from "react-router-dom";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function Login() {
+export default function useLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -63,37 +62,5 @@ export default function Login() {
     setLoading(false);
   };
 
-  return (
-    <div className="auth-layout">
-      <section className="auth-card">
-        <p className="eyebrow">Codigo316</p>
-        <h2>Login</h2>
-        <p className="auth-subtitle">Ingresa con tu cuenta</p>
-        <form className="stack" onSubmit={login}>
-          {error && <p className="form-message error">{error}</p>}
-          <input
-            placeholder="Email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button className="btn-primary" type="submit" disabled={loading}>
-            {loading ? "Ingresando..." : "Ingresar"}
-          </button>
-        </form>
-        <p className="auth-footer">
-          ¿No tienes cuenta? <Link to="/signup">Regístrate aquí</Link>
-        </p>
-      </section>
-    </div>
-  );
+  return { email, password, error, loading, login, setEmail, setPassword };
 }

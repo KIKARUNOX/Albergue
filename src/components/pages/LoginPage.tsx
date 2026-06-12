@@ -1,5 +1,5 @@
-import Login from "../Login";
+import LoginForm from "../organisms/LoginForm";
 
 export default function LoginPage() {
-  return <Login />;
+  return <LoginForm />;
 }

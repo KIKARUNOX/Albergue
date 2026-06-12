@@ -1,5 +1,5 @@
-import Signup from "../Signup";
+import SignupForm from "../organisms/SignupForm";
 
 export default function SignupPage() {
-  return <Signup />;
+  return <SignupForm />;
 }

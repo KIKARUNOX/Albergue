@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import type { AsistenciasListSectionProps } from "../../type/componentProps";
 import Button from "../atoms/Button";
+import Input from "../atoms/Input";
+import Label from "../atoms/Label";
+import Select from "../atoms/Select";
 import PageSection from "../templates/PageSection";
 
 const today = new Date();
@@ -49,9 +52,9 @@ export default function AsistenciasListSection({
   return (
     <PageSection title="Asistencias registradas">
       <div className="table-toolbar">
-        <label>
+        <Label>
           Filtrar por
-          <select
+          <Select
             value={filterType}
             onChange={(e) => {
               const nextType = e.target.value as "all" | "year" | "month";
@@ -67,28 +70,28 @@ export default function AsistenciasListSection({
             <option value="all">Sin filtro</option>
             <option value="year">Año</option>
             <option value="month">Mes</option>
-          </select>
-        </label>
+          </Select>
+        </Label>
 
         {filterType === "year" ? (
-          <label>
+          <Label>
             Año
-            <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+            <Select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
               <option value="">Todos</option>
               {availableYears.map((year) => (
                 <option key={year} value={year}>
                   {year}
                 </option>
               ))}
-            </select>
-          </label>
+            </Select>
+          </Label>
         ) : null}
 
         {filterType === "month" ? (
-          <label>
+          <Label>
             Mes
-            <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
-          </label>
+            <Input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} />
+          </Label>
         ) : null}
       </div>
 

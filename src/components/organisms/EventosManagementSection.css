@@ -262,25 +262,6 @@
   transition: all 0.2s ease;
 }
 
-.btn-primary {
-  background: var(--brand);
-  color: white;
-}
-
-.btn-primary:hover {
-  background: var(--brand-dark);
-  transform: translateY(-2px);
-}
-
-.btn-secondary {
-  background: var(--line);
-  color: var(--ink);
-}
-
-.btn-secondary:hover {
-  background: #d0d0d0;
-}
-
 @media (max-width: 768px) {
   .eventos-header {
     flex-direction: column;
