@@ -849,7 +849,7 @@ export default function useAsistenciaPage() {
         ? [ganadorId]
         : equipoMiembros;
       for (const pid of ganadoresIds) {
-        await updateDoc(doc(db, "personas", pid), { actividadVictorias: increment(1) });
+        await setDoc(doc(db, "personas", pid), { actividadVictorias: increment(1) }, { merge: true });
       }
 
       invalidateCache(PERSONAS_HOOK_CACHE_KEY);
@@ -904,7 +904,7 @@ export default function useAsistenciaPage() {
         ? (actividad.ganadorId ? [actividad.ganadorId] : [])
         : (actividad.equipoMiembros ?? []);
       for (const pid of ganadoresIds) {
-        await updateDoc(doc(db, "personas", pid), { actividadVictorias: increment(-1) });
+        await setDoc(doc(db, "personas", pid), { actividadVictorias: increment(-1) }, { merge: true });
       }
 
       invalidateCache(PERSONAS_HOOK_CACHE_KEY);
