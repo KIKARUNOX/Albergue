@@ -26,6 +26,15 @@ export default function AboutUsSection() {
                 Facebook · Codigo 3:16
               </a>
             </li>
+            <li>
+              <a
+                href="https://www.tiktok.com/@codigo.316"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Tik Tok · Codigo 3:16
+              </a>
+            </li>
           </ul>
         </section>
 

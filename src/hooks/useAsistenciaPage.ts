@@ -209,7 +209,7 @@ export default function useAsistenciaPage() {
 
       const estado = data.estado ?? (data.activo ? "programado" : "sin-reto");
 
-      if (!(data.nombre ?? "").trim()) {
+      if (!(data.nombre ?? "")) {
         setProximoRetoNombre("");
         setProximoRetoPuntos(10);
         setProximoRetoDescripcion("");
@@ -217,7 +217,7 @@ export default function useAsistenciaPage() {
         return;
       }
 
-      setProximoRetoNombre((data.nombre ?? "").trim());
+      setProximoRetoNombre(data.nombre ?? "");
       setProximoRetoPuntos(Math.max(1, Math.floor(Number(data.puntos ?? 10))));
       setProximoRetoDescripcion(data.descripcion ?? "");
       setProximoRetoEstado(estado);
@@ -259,7 +259,7 @@ export default function useAsistenciaPage() {
   }, [asistenciaSeleccionada]);
 
   const hasProximoReto = useMemo(
-    () => Boolean(proximoRetoNombre.trim()),
+    () => Boolean(proximoRetoNombre),
     [proximoRetoNombre],
   );
 
@@ -268,7 +268,7 @@ export default function useAsistenciaPage() {
     descripcion: string;
     puntos: number;
   } | null> => {
-    const nombre = proximoRetoNombre.trim();
+    const nombre = proximoRetoNombre;
     const descripcion = proximoRetoDescripcion;
     const puntos = Math.max(1, Math.floor(Number(proximoRetoPuntos) || 1));
 
@@ -541,7 +541,7 @@ export default function useAsistenciaPage() {
       setMensaje("La asistencia seleccionada no existe.");
       return false;
     }
-    if (!nombreReto.trim()) {
+    if (!nombreReto) {
       await Swal.fire({
         icon: "warning",
         title: "Nombre requerido",
@@ -560,7 +560,7 @@ export default function useAsistenciaPage() {
       setMensaje("Los puntos del reto deben ser un numero positivo mayor a 0.");
       return false;
     }
-    if (!descripcionReto.trim()) {
+    if (!descripcionReto) {
       await Swal.fire({
         icon: "warning",
         title: "Descripcion requerida",
@@ -598,9 +598,9 @@ export default function useAsistenciaPage() {
       const ref = doc(db, "asistencias", selectedAsistenciaId);
       await updateDoc(ref, {
         reto: {
-          nombre: nombreReto.trim(),
+          nombre: nombreReto,
           puntos: puntosNormalizados,
-          descripcion: descripcionReto.trim(),
+          descripcion: descripcionReto,
         },
         completaron: completaronValidos,
       });
