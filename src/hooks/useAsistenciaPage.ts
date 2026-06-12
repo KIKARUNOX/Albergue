@@ -155,13 +155,6 @@ export default function useAsistenciaPage() {
         });
 
         setAsistencias((prev) => (reset ? data : [...prev, ...data]));
-        // DEBUG: mostrar resumen de asistencias cargadas para depuracion de actividades
-        try {
-          // eslint-disable-next-line no-console
-          console.log("[useAsistenciaPage] asistencias carga:", data.map((a) => ({ id: a.id, fecha: a.fecha, actividades: Array.isArray(a.actividades) ? a.actividades.length : 0 })));
-        } catch (e) {
-          // ignore
-        }
         setLastAsistenciaDoc(
           snapshot.docs.length > 0
             ? snapshot.docs[snapshot.docs.length - 1]
