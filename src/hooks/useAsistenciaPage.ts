@@ -150,6 +150,7 @@ export default function useAsistenciaPage() {
             personas: Array.isArray(raw.personas) ? raw.personas : [],
             reto: raw.reto,
             completaron: Array.isArray(raw.completaron) ? raw.completaron : [],
+            actividades: Array.isArray(raw.actividades) ? raw.actividades : [],
           } as Asistencia;
         });
 

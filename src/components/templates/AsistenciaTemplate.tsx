@@ -326,6 +326,20 @@ export default function AsistenciaTemplate() {
                         No hay reto asignado para esta asistencia.
                       </p>
                     )}
+
+                    {asistencia.actividades && asistencia.actividades.length > 0 ? (
+                      <>
+                        <p><strong>Actividades:</strong></p>
+                        <ul className="compact-list">
+                          {asistencia.actividades.map((act, i) => (
+                            <li key={i}>
+                              {act.nombre} ({act.tipo === "individual" ? "Individual" : "Equipo"})
+                              {" — "}Ganador: {act.ganadorNombre}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : null}
                   </>
                 );
               })()}
