@@ -65,7 +65,6 @@ export type CalendarSectionProps = {
 
 export type LeaderboardSectionProps = {
   limit?: number;
-  showControls?: boolean;
 };
 
 export type AsistenciaCreationSectionProps = {
@@ -106,6 +105,28 @@ export type AsistenciasListSectionProps = {
   onDelete: (id: string) => void;
   onViewDetails: (id: string) => void;
 };
+
+export type ActividadesSectionProps = {
+  asistencias: Asistencia[];
+  selectedAsistenciaId: string;
+  onSelectedAsistenciaId: (id: string) => void;
+  nombreActividad: string;
+  onNombreActividad: (value: string) => void;
+  tipoActividad: "individual" | "equipo";
+  onTipoActividad: (value: "individual" | "equipo") => void;
+  ganadorId: string;
+  onGanadorId: (value: string) => void;
+  nombreEquipo: string;
+  onNombreEquipo: (value: string) => void;
+  equipoMiembros: string[];
+  onToggleEquipoMiembro: (id: string) => void;
+  personas: Persona[];
+  onAddActividad: () => void;
+  onDeleteActividad: (asistenciaId: string, index: number) => void;
+  actividadesError: string;
+};
+
+export type ActividadesTopSectionProps = Record<string, never>;
 
 export type InasistentesSectionProps = {
   asistencias: Asistencia[];

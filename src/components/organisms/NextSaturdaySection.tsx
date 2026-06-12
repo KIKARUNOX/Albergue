@@ -145,14 +145,7 @@ export default function NextSaturdaySection({ persona }: NextSaturdaySectionProp
   }
 
   if (!evento) {
-    return (
-      <section className="next-saturday">
-        <div className="saturday-header">
-          <h2>Próximos Eventos</h2>
-        </div>
-        <p className="no-evento">No hay próximos eventos</p>
-      </section>
-    );
+    return null;
   }
 
   return (

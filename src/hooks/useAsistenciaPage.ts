@@ -19,7 +19,7 @@ import {
 import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
 import { db } from "../firebase";
-import type { Asistencia, AsistenciaDoc, Persona } from "../type/asistencia";
+import type { Actividad, Asistencia, AsistenciaDoc, Persona } from "../type/asistencia";
 import {
   getCachedValue,
   invalidateCache,
@@ -59,6 +59,13 @@ export default function useAsistenciaPage() {
   const [proximoRetoEstado, setProximoRetoEstado] =
     useState<ProximoRetoEstado>("sin-reto");
   const [savingProximoReto, setSavingProximoReto] = useState(false);
+
+  const [nombreActividad, setNombreActividad] = useState("");
+  const [tipoActividad, setTipoActividad] = useState<"individual" | "equipo">("individual");
+  const [ganadorId, setGanadorId] = useState("");
+  const [nombreEquipo, setNombreEquipo] = useState("");
+  const [equipoMiembros, setEquipoMiembros] = useState<string[]>([]);
+  const [actividadesError, setActividadesError] = useState("");
 
   const nombreCompleto = useCallback(
     (p?: Persona) =>
@@ -772,6 +779,149 @@ export default function useAsistenciaPage() {
     );
   }, []);
 
+  const toggleEquipoMiembro = useCallback((id: string) => {
+    setEquipoMiembros((prev) =>
+      prev.includes(id) ? prev.filter((mid) => mid !== id) : [...prev, id],
+    );
+  }, []);
+
+  const agregarActividad = useCallback(async (): Promise<boolean> => {
+    if (!selectedAsistenciaId) {
+      setActividadesError("Selecciona una asistencia.");
+      return false;
+    }
+    const asistencia = asistencias.find((a) => a.id === selectedAsistenciaId);
+    if (!asistencia) {
+      setActividadesError("La asistencia seleccionada no existe.");
+      return false;
+    }
+    if (!nombreActividad.trim()) {
+      setActividadesError("Escribe el nombre de la actividad.");
+      return false;
+    }
+    if (tipoActividad === "individual") {
+      if (!ganadorId) {
+        setActividadesError("Selecciona el ganador.");
+        return false;
+      }
+      if (!asistencia.personas.includes(ganadorId)) {
+        setActividadesError("El ganador debe ser un asistente de ese dia.");
+        return false;
+      }
+    }
+    if (tipoActividad === "equipo") {
+      if (!nombreEquipo.trim()) {
+        setActividadesError("Escribe el nombre del equipo ganador.");
+        return false;
+      }
+      if (equipoMiembros.length === 0) {
+        setActividadesError("Selecciona al menos un miembro del equipo ganador.");
+        return false;
+      }
+      const invalidMembers = equipoMiembros.filter((mid) => !asistencia.personas.includes(mid));
+      if (invalidMembers.length > 0) {
+        setActividadesError("Todos los miembros del equipo deben ser asistentes de ese dia.");
+        return false;
+      }
+    }
+
+    try {
+      setActividadesError("");
+      const actividad: Actividad = {
+        nombre: nombreActividad.trim(),
+        tipo: tipoActividad,
+        ganadorNombre: tipoActividad === "individual"
+          ? nombrePersonaById(ganadorId)
+          : nombreEquipo.trim(),
+      };
+      if (tipoActividad === "individual") {
+        actividad.ganadorId = ganadorId;
+      } else {
+        actividad.ganadorNombre = nombreEquipo.trim();
+        actividad.equipoMiembros = [...equipoMiembros];
+      }
+
+      const ref = doc(db, "asistencias", selectedAsistenciaId);
+      const existingActividades = asistencia.actividades ?? [];
+      await updateDoc(ref, { actividades: [...existingActividades, actividad] });
+
+      const ganadoresIds = tipoActividad === "individual"
+        ? [ganadorId]
+        : equipoMiembros;
+      for (const pid of ganadoresIds) {
+        await updateDoc(doc(db, "personas", pid), { actividadVictorias: increment(1) });
+      }
+
+      invalidateCache(PERSONAS_HOOK_CACHE_KEY);
+
+      setNombreActividad("");
+      setTipoActividad("individual");
+      setGanadorId("");
+      setNombreEquipo("");
+      setEquipoMiembros([]);
+      setMensaje("Actividad agregada.");
+      await Swal.fire({ icon: "success", title: "Actividad agregada" });
+      await cargarPersonas();
+      await cargarAsistencias({ reset: true });
+      return true;
+    } catch (err) {
+      console.error("Error al agregar actividad:", err);
+      setActividadesError("Error al agregar actividad.");
+      await Swal.fire({ icon: "error", title: "Error", text: "No se pudo agregar la actividad." });
+      return false;
+    }
+  }, [
+    asistencias, cargarAsistencias, cargarPersonas, equipoMiembros,
+    ganadorId, nombreActividad, nombreEquipo, nombrePersonaById,
+    selectedAsistenciaId, tipoActividad,
+  ]);
+
+  const eliminarActividad = useCallback(async (asistenciaId: string, index: number): Promise<boolean> => {
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "Eliminar actividad",
+      text: "Esta accion no se puede deshacer.",
+      showCancelButton: true,
+      confirmButtonText: "Si, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+    if (!result.isConfirmed) return false;
+
+    try {
+      const asistencia = asistencias.find((a) => a.id === asistenciaId);
+      if (!asistencia || !asistencia.actividades) return false;
+
+      const actividad = asistencia.actividades[index];
+      if (!actividad) return false;
+
+      const updatedActividades = [...asistencia.actividades];
+      updatedActividades.splice(index, 1);
+
+      const ref = doc(db, "asistencias", asistenciaId);
+      await updateDoc(ref, { actividades: updatedActividades });
+
+      const ganadoresIds = actividad.tipo === "individual"
+        ? (actividad.ganadorId ? [actividad.ganadorId] : [])
+        : (actividad.equipoMiembros ?? []);
+      for (const pid of ganadoresIds) {
+        await updateDoc(doc(db, "personas", pid), { actividadVictorias: increment(-1) });
+      }
+
+      invalidateCache(PERSONAS_HOOK_CACHE_KEY);
+
+      setMensaje("Actividad eliminada.");
+      await Swal.fire({ icon: "success", title: "Eliminada", text: "Actividad eliminada." });
+      await cargarPersonas();
+      await cargarAsistencias({ reset: true });
+      return true;
+    } catch (err) {
+      console.error("Error al eliminar actividad:", err);
+      setMensaje("Error al eliminar actividad.");
+      await Swal.fire({ icon: "error", title: "Error", text: "No se pudo eliminar la actividad." });
+      return false;
+    }
+  }, [asistencias, cargarAsistencias, cargarPersonas]);
+
   return {
     asistencias,
     personas,
@@ -814,5 +964,19 @@ export default function useAsistenciaPage() {
     togglePersonaCompleto,
     nombrePersonaById,
     ordenarIdsPorNombre,
+    nombreActividad,
+    setNombreActividad,
+    tipoActividad,
+    setTipoActividad,
+    ganadorId,
+    setGanadorId,
+    nombreEquipo,
+    setNombreEquipo,
+    equipoMiembros,
+    setEquipoMiembros,
+    actividadesError,
+    toggleEquipoMiembro,
+    agregarActividad,
+    eliminarActividad,
   };
 }

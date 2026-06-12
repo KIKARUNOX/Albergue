@@ -7,6 +7,7 @@ import Modal from "../atoms/Modal";
 import PersonCheckboxGrid from "../molecules/PersonCheckboxGrid";
 import AsistenciaCreationSection from "../organisms/AsistenciaCreationSection";
 import RetoSection from "../organisms/RetoSection";
+import ActividadesSection from "../organisms/ActividadesSection";
 import AsistenciasListSection from "../organisms/AsistenciasListSection";
 import InasistentesSection from "../organisms/InasistentesSection";
 import ProximoRetoManagementSection from "../organisms/ProximoRetoManagementSection";
@@ -16,6 +17,7 @@ export default function AsistenciaTemplate() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRetoModal, setShowRetoModal] = useState(false);
   const [showProximoRetoModal, setShowProximoRetoModal] = useState(false);
+  const [showActividadesModal, setShowActividadesModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAsistenciaForDetails, setSelectedAsistenciaForDetails] =
     useState<string | null>(null);
@@ -67,6 +69,19 @@ export default function AsistenciaTemplate() {
     togglePersonaCompleto,
     nombrePersonaById,
     ordenarIdsPorNombre,
+    nombreActividad,
+    setNombreActividad,
+    tipoActividad,
+    setTipoActividad,
+    ganadorId,
+    setGanadorId,
+    nombreEquipo,
+    setNombreEquipo,
+    equipoMiembros,
+    actividadesError,
+    toggleEquipoMiembro,
+    agregarActividad,
+    eliminarActividad,
   } = useAsistenciaPage();
 
   const estadoRetoLabel = {
@@ -87,6 +102,10 @@ export default function AsistenciaTemplate() {
 
       <Button variant="secondary" onClick={() => setShowProximoRetoModal(true)}>
         Reto de la proxima semana · {estadoRetoLabel}
+      </Button>
+
+      <Button variant="secondary" onClick={() => setShowActividadesModal(true)}>
+        Actividades
       </Button>
 
       <Modal
@@ -174,6 +193,43 @@ export default function AsistenciaTemplate() {
               }
             })();
           }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showActividadesModal}
+        title="Actividades"
+        onClose={() => {
+          setShowActividadesModal(false);
+          setSelectedAsistenciaId("");
+        }}
+      >
+        <ActividadesSection
+          asistencias={asistencias}
+          selectedAsistenciaId={selectedAsistenciaId}
+          onSelectedAsistenciaId={setSelectedAsistenciaId}
+          nombreActividad={nombreActividad}
+          onNombreActividad={setNombreActividad}
+          tipoActividad={tipoActividad}
+          onTipoActividad={setTipoActividad}
+          ganadorId={ganadorId}
+          onGanadorId={setGanadorId}
+          nombreEquipo={nombreEquipo}
+          onNombreEquipo={setNombreEquipo}
+          equipoMiembros={equipoMiembros}
+          onToggleEquipoMiembro={toggleEquipoMiembro}
+          personas={personas}
+          onAddActividad={() => {
+            void (async () => {
+              const ok = await agregarActividad();
+              if (ok) {
+                setShowActividadesModal(false);
+                setSelectedAsistenciaId("");
+              }
+            })();
+          }}
+          onDeleteActividad={eliminarActividad}
+          actividadesError={actividadesError}
         />
       </Modal>
 

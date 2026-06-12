@@ -12,12 +12,21 @@ export interface Reto {
   descripcion?: string;
 }
 
+export interface Actividad {
+  nombre: string;
+  tipo: "individual" | "equipo";
+  ganadorId?: string;
+  ganadorNombre: string;
+  equipoMiembros?: string[];
+}
+
 export interface Asistencia {
   id: string;
   fecha: string;
   personas: string[];
   reto?: Reto;
   completaron: string[];
+  actividades?: Actividad[];
 }
 
 export type AsistenciaDoc = Partial<{
@@ -25,4 +34,5 @@ export type AsistenciaDoc = Partial<{
   personas: string[];
   reto: Reto;
   completaron: string[];
+  actividades: Actividad[];
 }>;
