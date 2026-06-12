@@ -11,7 +11,7 @@ export default function AppHeader({ onLogout, persona }: AppHeaderProps) {
   return (
     <header className={`app-header${isYoung ? " is-young" : ""}`}>
       <div className="app-header-main">
-        <img src="/codigo3_16.PNG" alt="Logo de Codigo316" className="logo" />
+        <img src="/codigo3_16.webp" alt="Logo de Codigo316" className="logo" />
         <p className="eyebrow">Codigo 3:16</p>
 
         {isYoung ? (

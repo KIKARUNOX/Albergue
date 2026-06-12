@@ -1,18 +1,33 @@
-# React + TypeScript + Vite
+# Codigo316 · Gestión de Asistencias y Retos
 
+Stack: **React 19 + TypeScript + Vite 8** · Frontend  
+**Cloudflare Pages Functions** · Backend API  
+**Firebase Auth + Firestore** · Authentication & Database
 
-## Configuracion
+---
 
-1. Copia `.env.example` a `.env`.
-2. Completa variables publicas de frontend.
-3. Ejecuta la app.
+## Quick Start
 
 ```bash
 npm install
 npm run dev
 ```
 
-Variables esperadas:
+**Build & Deploy:**
+
+```bash
+npm run lint        # ESLint check
+npm run build       # TypeScript check + Vite build
+npm run deploy:pages # Deploy to Cloudflare Pages (recommended)
+```
+
+---
+
+## Configuration
+
+### Frontend Environment Variables
+
+Copy `.env.example` to `.env` and fill in:
 
 - `VITE_FIREBASE_API_KEY`
 - `VITE_FIREBASE_AUTH_DOMAIN`
@@ -20,149 +35,104 @@ Variables esperadas:
 - `VITE_FIREBASE_STORAGE_BUCKET`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
-- `VITE_FIREBASE_MEASUREMENT_ID` (opcional)
-- `VITE_FIRESTORE_DATABASE_ID` (opcional)
+- `VITE_FIREBASE_MEASUREMENT_ID` (optional)
+- `VITE_FIRESTORE_DATABASE_ID` (optional)
 
-Variables de servidor (Cloudflare Functions) para acceso seguro con Service Account:
+### Cloudflare Pages (Backend API)
 
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_WEB_API_KEY` (API key web de Firebase, usada solo para validar ID token en backend)
-- `FIRESTORE_DATABASE_ID` (opcional, por defecto `(default)`)
-- `FIREBASE_SERVICE_ACCOUNT_JSON` (JSON completo de la Service Account)
-
-Alternativa a `FIREBASE_SERVICE_ACCOUNT_JSON`:
-
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY` (con saltos de linea escapados como `\n`)
-
-Endpoints backend agregados para reducir operaciones sensibles en cliente:
-
-- `POST /api/bootstrap-session`
-- `POST /api/link-persona`
-- `POST /api/register-persona`
-
-## Cloudflare Pages (recomendado para /api)
-
-Para que funcionen los endpoints de `functions/api/*`, despliega en Cloudflare Pages (no solo Worker de assets).
-
-1. Crea un proyecto Pages llamado `codigo316`.
-2. Configura variables/secrets en Pages -> Settings -> Variables and Secrets.
-3. Despliega con:
+Deploy at Cloudflare Pages to enable `functions/api/*` endpoints:
 
 ```bash
 npm run deploy:pages
 ```
 
-En local puedes probar Pages + Functions con:
+Set secrets in **Pages → Settings → Variables and Secrets**:
 
-```bash
-npm run dev:pages
-```
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_WEB_API_KEY`
+- `FIRESTORE_DATABASE_ID` (optional, defaults to `(default)`)
+- `FIREBASE_SERVICE_ACCOUNT_JSON` (full Service Account JSON)
 
-Si usas solo `wrangler deploy` en modo Worker de assets, los `POST /api/*` pueden responder 405.
-
-## Frontend Cloudflare + Backend Firebase
-
-En esta configuracion, el frontend siempre llama a rutas same-origin (`/api/*`) y Cloudflare Functions actua como backend.
-
-1. Frontend -> `POST /api/*` (mismo dominio Cloudflare).
-2. Cloudflare Functions -> Firebase Auth + Firestore REST (server-to-server).
-3. No exponer credenciales ni llamar Firestore directo desde navegador.
-
-No se usa `VITE_API_BASE_URL` en este flujo.
-
-Pasos de despliegue del backend Firebase:
-
-```bash
-cd firebase-functions
-npm install
-npx firebase login
-cd ..
-npm run firebase:functions:deploy
-```
-
-Variables requeridas en Firebase Functions (Runtime config / Environment variables):
-
-- `FIREBASE_PROJECT_ID=codigo316-837bd`
-- `FIREBASE_WEB_API_KEY` (API key web de Firebase)
-- `FIRESTORE_DATABASE_ID=(default)` (opcional)
-- `FIREBASE_SERVICE_ACCOUNT_JSON` (recomendado)
-
-Alternativa:
+**Alternative to `FIREBASE_SERVICE_ACCOUNT_JSON`:**
 
 - `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY`
+- `FIREBASE_PRIVATE_KEY` (escaped newlines as `\n`)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Test locally:**
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev:pages  # Full Pages + Functions simulation
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### API Endpoints
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Route | Method | Purpose |
+|-------|--------|---------|
+| `/api/bootstrap-session` | POST | Lookup/upsert persona, return profile + permissions |
+| `/api/link-persona` | POST | Match existing persona to Firebase user |
+| `/api/register-persona` | POST | Create new persona in Firestore |
+| `/api/upload-evento-image` | POST | Upload event image to Google Drive |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+All endpoints require Firebase ID token in `Authorization: Bearer` header.
+
+**Image Upload Setup:**
+
+Set `GOOGLE_DRIVE_EVENTOS_FOLDER_ID` in Cloudflare secrets (see [SETUP_EVENTOS_DRIVE.md](SETUP_EVENTOS_DRIVE.md)).
+
+---
+
+## Features
+
+### Retos (Challenges)
+
+- **Asistencia Retos**: Add challenges to attendance records. Spaces in name/description are preserved as typed.
+- **Próximo Reto Semanal**: Schedule a recurring challenge for the next attendance automatically.
+- **Puntos**: Points awarded to users who complete challenges.
+
+### Personas
+
+- Firebase Auth user linking to personas
+- Role-based access: `joven` (default), `coordinador`, `lider`
+- Permissions managed in `src/lib/permissions.ts`
+
+### Eventos
+
+- Event image gallery with drag-drop upload
+- Google Drive integration for image storage
+
+---
+
+## Project Structure
+
 ```
+src/
+├── components/
+│   ├── atoms/          Button, Input, Label, etc.
+│   ├── molecules/      Reusable component groups
+│   ├── organisms/      Feature sections (Asistencia, Retos, etc.)
+│   └── pages/          Route components
+├── hooks/              React hooks (useAsistenciaPage, etc.)
+├── lib/                Utilities (api, permissions, cache, etc.)
+├── styles/             CSS (no Tailwind, no CSS-in-JS)
+└── type/               TypeScript type definitions
+
+functions/api/         Cloudflare Pages Functions (backend)
+firebase-functions/    Separate Firebase Functions project
+```
+
+---
+
+## Recent Changes
+
+- **Reto input**: Name and description fields now preserve spaces as typed (no trimming on save).
+- **Events**: Image upload to Google Drive via `/api/upload-evento-image`.
+
+---
+
+## Notes
+
+- **No Tests**: Project has no test framework. Use manual testing or add Jest/Vitest as needed.
+- **React Compiler**: Enabled in Vite config. May impact dev/build performance.
+- **TypeScript Strict**: `verbatimModuleSyntax`, `erasableSyntaxOnly`, `noUnusedLocals` active.
+- **CSS**: Vanilla CSS files in `src/styles/`. No Tailwind or CSS-in-JS.
+- **Caching**: Dual memory + sessionStorage cache via `src/lib/readCache.ts`.
