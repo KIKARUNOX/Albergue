@@ -28,7 +28,6 @@ export type VerifiedFirebaseUser = {
 const GOOGLE_OAUTH_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const FIREBASE_LOOKUP_ENDPOINT = "https://identitytoolkit.googleapis.com/v1/accounts:lookup";
 const FIRESTORE_SCOPE = "https://www.googleapis.com/auth/datastore";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 
 const tokenCache = new Map<string, { token: string; expiresAtMs: number }>();
 
@@ -177,55 +176,6 @@ export async function getGoogleAccessToken(env: EnvMap): Promise<string> {
 
   const tokenResponse = (await response.json()) as GoogleAccessTokenResponse;
   tokenCache.set(projectId, {
-    token: tokenResponse.access_token,
-    expiresAtMs: Date.now() + Math.max(60, tokenResponse.expires_in - 60) * 1000,
-  });
-
-  return tokenResponse.access_token;
-}
-
-export async function getGoogleDriveAccessToken(env: EnvMap): Promise<string> {
-  const projectId = getProjectId(env);
-  const cacheKey = `${projectId}:drive`;
-  const cached = tokenCache.get(cacheKey);
-  if (cached && cached.expiresAtMs > Date.now() + 30_000) {
-    return cached.token;
-  }
-
-  const credentials = getServiceAccountCredentials(env);
-  const now = Math.floor(Date.now() / 1000);
-  const assertion = await signJwtAssertion(
-    {
-      iss: credentials.clientEmail,
-      sub: credentials.clientEmail,
-      aud: GOOGLE_OAUTH_TOKEN_ENDPOINT,
-      scope: DRIVE_SCOPE,
-      iat: now,
-      exp: now + 3600,
-    },
-    credentials.privateKey
-  );
-
-  const form = new URLSearchParams({
-    grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-    assertion,
-  });
-
-  const response = await fetch(GOOGLE_OAUTH_TOKEN_ENDPOINT, {
-    method: "POST",
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    body: form.toString(),
-  });
-
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`No se pudo obtener access_token de Google Drive: ${response.status} ${body}`);
-  }
-
-  const tokenResponse = (await response.json()) as GoogleAccessTokenResponse;
-  tokenCache.set(cacheKey, {
     token: tokenResponse.access_token,
     expiresAtMs: Date.now() + Math.max(60, tokenResponse.expires_in - 60) * 1000,
   });

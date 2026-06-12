@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { construirCandidatas } from "../../lib/googleDrive";
 
 type ImagenConFallbackProps = {
   src: string;
@@ -8,30 +7,19 @@ type ImagenConFallbackProps = {
 };
 
 export default function ImagenConFallback({ src, alt, className = "" }: ImagenConFallbackProps) {
-  const candidatas = construirCandidatas(src);
-  const [intento, setIntento] = useState(0);
   const [fallida, setFallida] = useState(false);
 
-  const srcActual = candidatas[Math.min(intento, candidatas.length - 1)];
-
   if (fallida) {
-    return <p className="no-evento">No se pudo cargar la imagen (Drive requiere enlace publico).</p>;
+    return <p className="no-evento">No se pudo cargar la imagen.</p>;
   }
 
   return (
     <img
-      src={srcActual}
+      src={src}
       alt={alt}
       className={className}
       referrerPolicy="no-referrer"
-      onError={() => {
-        const siguiente = intento + 1;
-        if (siguiente >= candidatas.length) {
-          setFallida(true);
-        } else {
-          setIntento(siguiente);
-        }
-      }}
+      onError={() => setFallida(true)}
     />
   );
 }

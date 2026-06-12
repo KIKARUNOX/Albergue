@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import Swal from "sweetalert2";
 import { auth } from "../../firebase";
-import { convertirUrls } from "../../lib/googleDrive";
 import Button from "../atoms/Button";
 import Input from "../atoms/Input";
 import TextArea from "../atoms/TextArea";
@@ -115,7 +114,10 @@ export default function EventoFormModal({
       return;
     }
 
-    const urlArray = convertirUrls(imagenes.split("\n"));
+    const urlArray = imagenes
+      .split("\n")
+      .map((u) => u.trim())
+      .filter((u) => u.length > 0);
     if (urlArray.length === 0) {
       await Swal.fire({ icon: "warning", title: "Imágenes requeridas", text: "Carga o pega al menos una imagen" });
       return;
@@ -192,7 +194,7 @@ export default function EventoFormModal({
 
             <div className="manual-url-section">
               <Label className="secondary-label">O pega URLs manualmente (una por línea)</Label>
-              <TextArea name="imagenes" placeholder="https://drive.google.com/..." value={imagenes} onChange={(e) => setImagenes(e.target.value)} rows={3} />
+              <TextArea name="imagenes" placeholder="https://i.ibb.co/..." value={imagenes} onChange={(e) => setImagenes(e.target.value)} rows={3} />
             </div>
           </div>
 
