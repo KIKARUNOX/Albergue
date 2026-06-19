@@ -27,5 +27,6 @@ export default function DashboardPage({ persona }: DashboardPageProps) {
         <ActividadesTopSection />
         <AboutUsSection />
       </div>
+    </>
   );
 }
