@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://codigo316.com/sitemap.xml
