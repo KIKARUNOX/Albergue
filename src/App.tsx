@@ -11,6 +11,8 @@ import PersonasPageView from "./components/pages/PersonasPageView";
 import AsistenciaPageView from "./components/pages/AsistenciaPageView";
 import ProfilePage from "./components/pages/ProfilePage";
 import EventosPage from "./components/pages/EventosPage";
+import TerminosPage from "./components/pages/TerminosPage";
+import PrivacidadPage from "./components/pages/PrivacidadPage";
 import AppHeader from "./components/organisms/AppHeader";
 import AppNavigation from "./components/organisms/AppNavigation";
 import { Navigate, Route, Routes } from "react-router-dom";
@@ -146,6 +148,8 @@ function App() {
       <Routes>
         <Route path="/" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/terminos" element={<TerminosPage />} />
+        <Route path="/privacidad" element={<PrivacidadPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -185,6 +189,8 @@ function App() {
                   : <Navigate to="/" replace />
             }
           />
+          <Route path="/terminos" element={<TerminosPage />} />
+          <Route path="/privacidad" element={<PrivacidadPage />} />
           <Route path="/signup" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

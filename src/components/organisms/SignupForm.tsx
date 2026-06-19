@@ -87,6 +87,11 @@ export default function SignupForm() {
         <p className="auth-footer">
           ¿Ya tienes cuenta? <Link to="/">Inicia sesion</Link>
         </p>
+        <p className="legal-links">
+          <Link to="/terminos">Términos de Uso</Link>
+          <span className="legal-sep">·</span>
+          <Link to="/privacidad">Política de Privacidad</Link>
+        </p>
       </section>
     </div>
   );

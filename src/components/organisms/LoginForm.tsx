@@ -36,6 +36,11 @@ export default function LoginForm() {
         <p className="auth-footer">
           ¿No tienes cuenta? <Link to="/signup">Regístrate aquí</Link>
         </p>
+        <p className="legal-links">
+          <Link to="/terminos">Términos de Uso</Link>
+          <span className="legal-sep">·</span>
+          <Link to="/privacidad">Política de Privacidad</Link>
+        </p>
       </section>
     </div>
   );
