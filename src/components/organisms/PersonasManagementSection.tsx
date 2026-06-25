@@ -265,6 +265,11 @@ export default function PersonasManagementSection({
         <Spinner text="Cargando personas..." />
       ) : (
         <div className="stack-sm">
+          <p className="personas-count">
+            {ui.query.trim()
+              ? `${filtered.length} de ${personas.length} personas`
+              : `${personas.length} personas`}
+          </p>
           <div className="table-scroll">
             <table className="data-table">
               <thead>

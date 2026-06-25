@@ -228,6 +228,12 @@ button:disabled {
   margin-bottom: 0.8rem;
 }
 
+.personas-count {
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+  color: var(--text-muted, #666);
+}
+
 .table-scroll {
   width: 100%;
   overflow-x: auto;
