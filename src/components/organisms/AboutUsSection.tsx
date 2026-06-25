@@ -1,5 +1,5 @@
 import PageSection from "../templates/PageSection";
-import "./AboutUsSection.css";
+import "../../styles/AboutUsSection.css";
 
 export default function AboutUsSection() {
   return (

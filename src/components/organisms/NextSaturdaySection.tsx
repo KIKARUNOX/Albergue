@@ -11,7 +11,7 @@ import {
 import { db } from "../../firebase";
 import type { Evento, EventoComentario } from "../../type/evento";
 import type { PersonaDetalle } from "../../type/persona";
-import "./NextSaturdaySection.css";
+import "../../styles/NextSaturdaySection.css";
 import EventImageGallery from "../molecules/EventImageGallery";
 import ComentarioItem from "../molecules/ComentarioItem";
 import ComentarioModal from "./ComentarioModal";

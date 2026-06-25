@@ -3,7 +3,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, getDocs } from "firebase
 import { db } from "../../firebase";
 import Swal from "sweetalert2";
 import type { Evento } from "../../type/evento";
-import "./EventosManagementSection.css";
+import "../../styles/EventosManagementSection.css";
 import Button from "../atoms/Button";
 import EventoFormModal from "./EventoFormModal";
 import Spinner from "../atoms/Spinner";
