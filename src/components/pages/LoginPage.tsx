@@ -5,8 +5,8 @@ export default function LoginPage() {
   return (
     <>
       <Helmet>
-        <title>Iniciar sesión — Código 316</title>
-        <meta name="description" content="Accede a la plataforma de gestión de jóvenes Código 316." />
+        <title>Iniciar sesion — Albergue</title>
+        <meta name="description" content="Accede al sistema de gestion del albergue." />
       </Helmet>
       <LoginForm />
     </>

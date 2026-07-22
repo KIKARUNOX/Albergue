@@ -1,8 +1,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
 import Swal from "sweetalert2";
-import { auth } from "../firebase";
+import { supabase } from "../supabase";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -21,9 +20,9 @@ export default function useLogin() {
       await Swal.fire({
         icon: "warning",
         title: "Datos requeridos",
-        text: "Email y contraseña son requeridos.",
+        text: "Email y contrasena son requeridos.",
       });
-      setError("Email y contraseña son requeridos");
+      setError("Email y contrasena son requeridos");
       return;
     }
     if (!EMAIL_PATTERN.test(emailNormalizado)) {
@@ -38,19 +37,31 @@ export default function useLogin() {
     if (password.length < 6) {
       await Swal.fire({
         icon: "warning",
-        title: "Contraseña invalida",
-        text: "La contraseña debe tener al menos 6 caracteres.",
+        title: "Contrasena invalida",
+        text: "La contrasena debe tener al menos 6 caracteres.",
       });
-      setError("La contraseña debe tener al menos 6 caracteres");
+      setError("La contrasena debe tener al menos 6 caracteres");
       return;
     }
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, emailNormalizado, password);
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: emailNormalizado,
+        password,
+      });
+
+      if (authError) {
+        await Swal.fire({
+          icon: "error",
+          title: "No se pudo iniciar sesion",
+          text: authError.message,
+        });
+        setError(authError.message);
+      }
     } catch (e: unknown) {
       const errorMessage =
-        e instanceof Error ? e.message : "Error al iniciar sesión";
+        e instanceof Error ? e.message : "Error al iniciar sesion";
       await Swal.fire({
         icon: "error",
         title: "No se pudo iniciar sesion",

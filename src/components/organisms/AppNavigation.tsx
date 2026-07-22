@@ -1,35 +1,25 @@
 import { NavLink } from "react-router-dom";
-import type { AppNavigationProps } from "../../type/componentProps";
 
-export default function AppNavigation({ permisos }: AppNavigationProps) {
+type AppNavigationProps = {
+  isAdmin: boolean;
+};
+
+export default function AppNavigation({ isAdmin }: AppNavigationProps) {
   return (
     <nav className="app-nav" aria-label="Secciones principales">
       <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
         Inicio
       </NavLink>
-      {permisos.personas ? (
+      {isAdmin ? (
         <NavLink to="/personas" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
           Personas
         </NavLink>
       ) : null}
-      {permisos.asistencias ? (
-        <NavLink to="/asistencias" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-          Asistencias
-        </NavLink>
-      ) : null}
-      {permisos.importacion ? (
+      {isAdmin ? (
         <NavLink to="/import" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
           Importar
         </NavLink>
       ) : null}
-      {permisos.gestionarPermisos ? (
-        <NavLink to="/eventos" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-          Eventos
-        </NavLink>
-      ) : null}
-      <NavLink to="/perfil" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-        Perfil
-      </NavLink>
     </nav>
   );
 }

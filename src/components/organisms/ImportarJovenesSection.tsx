@@ -1,12 +1,10 @@
 import { useState } from "react";
 import * as XLSX from "xlsx";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { db } from "../../firebase";
-import { defaultPermisosByRole } from "../../lib/permissions";
-import { normalizeEmail, normalizeName, normalizePhone, normalizeRoleValue } from "../../lib/textNormalization";
+import { supabase } from "../../supabase";
+import { normalizeName, normalizeCedula } from "../../lib/textNormalization";
 import type { ExcelRow } from "../../type/componentProps";
-import { findValue, toText, toNumber, toDateString, toBool } from "../../lib/excelUtils";
+import { findValue, toText, toNumber } from "../../lib/excelUtils";
 import PageSection from "../templates/PageSection";
 import ExportarSection from "../molecules/ExportarSection";
 
@@ -42,37 +40,29 @@ export default function ImportarJovenesSection() {
 
         for (const r of rows) {
           const nombre = toText(findValue(r, ["nombre", "nombres"]));
-          const apellido1 = toText(findValue(r, ["primer apellido", "apellido1", "apellido 1", "primer_apellido"]));
-          const apellido2 = toText(findValue(r, ["segundo apellido", "apellido2", "apellido 2", "segundo_apellido"]));
-
           if (!nombre) {
             fail += 1;
             continue;
           }
 
-          const edadRaw = findValue(r, ["edad"]);
-          const fechaNacimiento = toDateString(findValue(r, ["fecha nacimiento", "fecha de nacimiento", "nacimiento"]));
-          const telefono = toText(findValue(r, ["telefono", "teléfono", "telefono sin g", "teléfono sin g"]));
-          const localidad = toText(findValue(r, ["localidad", "barrio", "distrito"]));
-          const bautizadoRaw = findValue(r, ["bautizado", "bautizada"]);
-
-          await addDoc(collection(db, "personas"), {
+          const row = {
             nombre: normalizeName(nombre),
-            apellido1: normalizeName(apellido1),
-            apellido2: normalizeName(apellido2),
-            role: normalizeRoleValue("joven"),
-            permisos: defaultPermisosByRole("joven"),
-            email: normalizeEmail(toText(findValue(r, ["email", "correo", "correo electronico", "correo electrónico"]))),
-            telefono: normalizePhone(telefono),
-            localidad,
-            fechaNacimiento,
-            edad: toNumber(edadRaw, 0),
-            bautizado: toBool(bautizadoRaw),
-            puntos: toNumber(findValue(r, ["puntos", "puntaje"]), 0),
-            createdAt: serverTimestamp(),
-          })
-            .then(() => { ok += 1; })
-            .catch(() => { fail += 1; });
+            apellido1: normalizeName(toText(findValue(r, ["primer apellido", "apellido1", "apellido 1", "primer_apellido"]))),
+            apellido2: normalizeName(toText(findValue(r, ["segundo apellido", "apellido2", "apellido 2", "segundo_apellido"]))),
+            sexo: toText(findValue(r, ["sexo", "genero", "género"])),
+            cedula: normalizeCedula(toText(findValue(r, ["cedula", "cédula", "dni", "identificacion", "identificación"]))),
+            edad: toNumber(findValue(r, ["edad"]), 0),
+            direccion: toText(findValue(r, ["direccion", "dirección", "direccion completa", "dirección completa"])),
+            estado_salud: toText(findValue(r, ["estado de salud", "salud", "estado salud"])),
+            escolaridad: toText(findValue(r, ["escolaridad", "nivel educativo", "estudios", "grado"])),
+          };
+
+          const { error } = await supabase.from("personas").insert(row);
+          if (error) {
+            fail += 1;
+          } else {
+            ok += 1;
+          }
         }
 
         setResultado(`Importacion completada. Correctos: ${ok}, Fallidos: ${fail}`);
@@ -93,10 +83,10 @@ export default function ImportarJovenesSection() {
   };
 
   return (
-    <PageSection title="Importar jovenes desde Excel">
+    <PageSection title="Importar personas desde Excel">
       <p className="small-text">
-        Encabezados soportados: NOMBRE, PRIMER APELLIDO, SEGUNDO APELLIDO, EDAD, FECHA NACIMIENTO, TELEFONO,
-        LOCALIDAD, BAUTIZADO.
+        Encabezados soportados: NOMBRE, PRIMER APELLIDO, SEGUNDO APELLIDO, SEXO, CEDULA, EDAD,
+        DIRECCION, ESTADO DE SALUD, ESCOLARIDAD.
       </p>
       <input type="file" accept=".xlsx,.xls" onChange={onFileChange} disabled={loading} />
       {loading ? <p>Cargando...</p> : null}

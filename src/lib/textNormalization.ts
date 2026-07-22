@@ -1,6 +1,3 @@
-import { normalizeRole } from "./permissions";
-import type { PersonaRole } from "../type/persona";
-
 export function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -15,14 +12,6 @@ export function normalizeName(value?: string): string {
     .join(" ");
 }
 
-export function normalizeEmail(value?: string): string {
-  return normalizeWhitespace(value ?? "").toLowerCase();
-}
-
-export function normalizePhone(value?: string): string {
+export function normalizeCedula(value?: string): string {
   return normalizeWhitespace(value ?? "");
-}
-
-export function normalizeRoleValue(value?: string): PersonaRole {
-  return normalizeRole(value);
 }

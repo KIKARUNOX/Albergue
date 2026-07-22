@@ -1,30 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  addDoc,
-  collection,
-  doc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  serverTimestamp,
-  startAfter,
-  updateDoc,
-} from "firebase/firestore";
-import type { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import Swal from "sweetalert2";
-import { db } from "../../firebase";
-import {
-  invalidateCache,
-  setCachedValue,
-  getCachedValue,
-} from "../../lib/readCache";
-import type {
-  PersonaDetalle,
-  PersonaForm,
-  PersonaPermisos,
-  PersonaRole,
-} from "../../type/persona";
+import { supabase } from "../../supabase";
+import type { Persona, PersonaForm } from "../../type/persona";
 import Button from "../atoms/Button";
 import Input from "../atoms/Input";
 import PageSection from "../templates/PageSection";
@@ -33,15 +10,15 @@ import PersonaCreateModal from "./PersonaCreateModal";
 import PersonaEditModal from "./PersonaEditModal";
 import Spinner from "../atoms/Spinner";
 
-type PersonasManagementUiState = {
+type UiState = {
   query: string;
   mensaje: string;
   loading: boolean;
-  selectedPersona: PersonaDetalle | null;
+  selectedPersona: Persona | null;
   showCreateModal: boolean;
 };
 
-const initialUiState: PersonasManagementUiState = {
+const initialUiState: UiState = {
   query: "",
   mensaje: "",
   loading: true,
@@ -49,198 +26,105 @@ const initialUiState: PersonasManagementUiState = {
   showCreateModal: false,
 };
 
-const PERSONAS_PAGE_SIZE = 40;
-const PERSONAS_CACHE_KEY = "personas:first-page";
-const PERSONAS_CACHE_TTL_MS = 2 * 60 * 1000;
+const PAGE_SIZE = 40;
 
-type PersonasManagementSectionProps = {
-  canManagePermissions: boolean;
-};
-
-export default function PersonasManagementSection({
-  canManagePermissions,
-}: PersonasManagementSectionProps) {
+export default function PersonasManagementSection() {
   "use no memo";
 
-  const [personas, setPersonas] = useState<PersonaDetalle[]>([]);
-  const [ui, setUi] = useState<PersonasManagementUiState>(initialUiState);
-  const [lastDoc, setLastDoc] =
-    useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [ui, setUi] = useState<UiState>(initialUiState);
+  const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const patchUi = (next: Partial<PersonasManagementUiState>) => {
+  const patchUi = (next: Partial<UiState>) => {
     setUi((prev) => ({ ...prev, ...next }));
   };
 
-  const fetchPersonasPage = async (
-    cursor?: QueryDocumentSnapshot<DocumentData>,
-  ) => {
-    const personasQuery = cursor
-      ? query(
-          collection(db, "personas"),
-          orderBy("nombre", "asc"),
-          limit(PERSONAS_PAGE_SIZE),
-          startAfter(cursor),
-        )
-      : query(
-          collection(db, "personas"),
-          orderBy("nombre", "asc"),
-          limit(PERSONAS_PAGE_SIZE),
-        );
+  const fetchPersonas = async (from: number, to: number) => {
+    const { data, error } = await supabase
+      .from("personas")
+      .select("*")
+      .order("nombre", { ascending: true })
+      .range(from, to);
 
-    const snapshot = await getDocs(personasQuery);
-    const data = snapshot.docs.map(
-      (d) => ({ id: d.id, ...d.data() }) as PersonaDetalle,
-    );
-    data.sort((a, b) =>
-      `${a.nombre} ${a.apellido1 ?? ""}`.localeCompare(
-        `${b.nombre} ${b.apellido1 ?? ""}`,
-        "es",
-      ),
-    );
-    return {
-      data,
-      nextCursor:
-        snapshot.docs.length > 0
-          ? snapshot.docs[snapshot.docs.length - 1]
-          : null,
-      hasMore: snapshot.docs.length === PERSONAS_PAGE_SIZE,
-    };
+    if (error) throw error;
+    return data as Persona[];
   };
 
-  const loadInitialPersonas = async () => {
+  const loadInitial = async () => {
     patchUi({ loading: true });
-
-    const cached = getCachedValue<PersonaDetalle[]>(PERSONAS_CACHE_KEY);
-    if (cached && cached.length > 0) {
-      setPersonas(cached);
-      patchUi({ loading: false });
+    try {
+      const data = await fetchPersonas(0, PAGE_SIZE - 1);
+      setPersonas(data);
+      setHasMore(data.length === PAGE_SIZE);
+      setPage(0);
+    } catch {
+      patchUi({ mensaje: "No se pudieron cargar las personas." });
+      setPersonas([]);
     }
-
-    const {
-      data,
-      nextCursor,
-      hasMore: nextHasMore,
-    } = await fetchPersonasPage();
-    setPersonas(data);
-    setLastDoc(nextCursor);
-    setHasMore(nextHasMore);
-    setCachedValue(PERSONAS_CACHE_KEY, data, PERSONAS_CACHE_TTL_MS);
     patchUi({ loading: false });
   };
 
   useEffect(() => {
     let mounted = true;
-
-    void loadInitialPersonas()
-      .then(() => {
-        if (!mounted) return;
-      })
-      .catch((error: unknown) => {
-        if (!mounted) return;
-        console.error("Error al cargar personas:", error);
-        patchUi({
-          mensaje: "No se pudieron cargar las personas.",
-          loading: false,
-        });
-        setPersonas([]);
-      });
-
-    return () => {
-      mounted = false;
-    };
+    void loadInitial().then(() => {
+      if (!mounted) return;
+    });
+    return () => { mounted = false; };
   }, []);
 
-  const recargarPersonas = async () => {
-    invalidateCache(PERSONAS_CACHE_KEY);
-
-    await loadInitialPersonas().catch((error: unknown) => {
-      console.error("Error al cargar personas:", error);
-      patchUi({ mensaje: "No se pudieron cargar las personas." });
-      setPersonas([]);
-      setLastDoc(null);
-      setHasMore(false);
-    });
-  };
-
-  const cargarMasPersonas = async () => {
-    if (!hasMore || !lastDoc || loadingMore) return;
-
+  const cargarMas = async () => {
+    if (!hasMore || loadingMore) return;
     setLoadingMore(true);
-    await fetchPersonasPage(lastDoc)
-      .then(({ data, nextCursor, hasMore: nextHasMore }) => {
-        setPersonas((prev) => {
-          const merged = [...prev, ...data];
-          setCachedValue(
-            PERSONAS_CACHE_KEY,
-            merged.slice(0, PERSONAS_PAGE_SIZE),
-            PERSONAS_CACHE_TTL_MS,
-          );
-          return merged;
-        });
-        setLastDoc(nextCursor);
-        setHasMore(nextHasMore);
-      })
-      .catch((error: unknown) => {
-        console.error("Error al cargar mas personas:", error);
-        patchUi({ mensaje: "No se pudieron cargar mas personas." });
-      });
-
+    try {
+      const nextPage = page + 1;
+      const from = nextPage * PAGE_SIZE;
+      const data = await fetchPersonas(from, from + PAGE_SIZE - 1);
+      setPersonas((prev) => [...prev, ...data]);
+      setPage(nextPage);
+      setHasMore(data.length === PAGE_SIZE);
+    } catch {
+      patchUi({ mensaje: "No se pudieron cargar mas personas." });
+    }
     setLoadingMore(false);
   };
 
   const filtered = useMemo(() => {
-    const normalized = ui.query.trim().toLowerCase();
-    if (!normalized) return personas;
-
+    const q = ui.query.trim().toLowerCase();
+    if (!q) return personas;
     return personas.filter((p) => {
-      const fullName =
-        `${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.toLowerCase();
-      return fullName.includes(normalized);
+      const fullName = `${p.nombre} ${p.apellido1} ${p.apellido2}`.toLowerCase();
+      return fullName.includes(q) || p.cedula.includes(q);
     });
   }, [personas, ui.query]);
 
-  const guardarNuevaPersona = async (
-    form: PersonaForm,
-    role: PersonaRole,
-    permisos: PersonaPermisos,
-  ) => {
-    await addDoc(collection(db, "personas"), {
-      ...form,
-      role,
-      permisos,
-      createdAt: serverTimestamp(),
-    });
+  const guardarNuevaPersona = async (form: PersonaForm) => {
+    const { error } = await supabase.from("personas").insert(form);
+    if (error) {
+      if (error.code === "23505") {
+        await Swal.fire({ icon: "warning", title: "Cedula duplicada", text: "Ya existe una persona con esa cedula." });
+        return;
+      }
+      throw error;
+    }
     patchUi({ showCreateModal: false, mensaje: "Persona registrada correctamente." });
-    await Swal.fire({
-      icon: "success",
-      title: "Registro exitoso",
-      text: "Persona registrada correctamente.",
-    });
-    await recargarPersonas();
+    await Swal.fire({ icon: "success", title: "Registro exitoso", text: "Persona registrada correctamente." });
+    await loadInitial();
   };
 
-  const guardarEdicion = async (
-    id: string,
-    form: PersonaForm,
-    role: PersonaRole,
-    permisos: PersonaPermisos,
-  ) => {
-    await updateDoc(doc(db, "personas", id), {
-      ...form,
-      ...(canManagePermissions ? { role, permisos } : {}),
-    });
-    patchUi({
-      mensaje: "Persona actualizada correctamente.",
-      selectedPersona: null,
-    });
-    await Swal.fire({
-      icon: "success",
-      title: "Actualizacion exitosa",
-      text: "Persona actualizada correctamente.",
-    });
-    await recargarPersonas();
+  const guardarEdicion = async (id: string, form: PersonaForm) => {
+    const { error } = await supabase.from("personas").update(form).eq("id", id);
+    if (error) {
+      if (error.code === "23505") {
+        await Swal.fire({ icon: "warning", title: "Cedula duplicada", text: "Ya existe otra persona con esa cedula." });
+        return;
+      }
+      throw error;
+    }
+    patchUi({ mensaje: "Persona actualizada correctamente.", selectedPersona: null });
+    await Swal.fire({ icon: "success", title: "Actualizacion exitosa", text: "Persona actualizada correctamente." });
+    await loadInitial();
   };
 
   return (
@@ -249,14 +133,11 @@ export default function PersonasManagementSection({
 
       <div className="table-toolbar">
         <Input
-          placeholder="Buscar por nombre..."
+          placeholder="Buscar por nombre o cedula..."
           value={ui.query}
           onChange={(e) => patchUi({ query: e.target.value })}
         />
-        <Button
-          variant="secondary"
-          onClick={() => patchUi({ showCreateModal: true })}
-        >
+        <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
           Agregar persona
         </Button>
       </div>
@@ -275,9 +156,9 @@ export default function PersonasManagementSection({
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>Telefono</th>
-                  <th>Rol</th>
-                  <th>Puntos</th>
+                  <th>Cedula</th>
+                  <th>Edad</th>
+                  <th>Sexo</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -285,17 +166,14 @@ export default function PersonasManagementSection({
                 {filtered.map((p) => (
                   <tr key={p.id}>
                     <td data-label="Nombre">
-                      {`${p.nombre} ${p.apellido1 ?? ""} ${p.apellido2 ?? ""}`.trim()}
+                      {`${p.nombre} ${p.apellido1} ${p.apellido2}`.trim()}
                     </td>
-                    <td data-label="Telefono">{p.telefono ?? "-"}</td>
-                    <td data-label="Rol">{p.role ?? "coordinador"}</td>
-                    <td data-label="Puntos">{p.puntos ?? 0}</td>
+                    <td data-label="Cedula">{p.cedula}</td>
+                    <td data-label="Edad">{p.edad}</td>
+                    <td data-label="Sexo">{p.sexo}</td>
                     <td data-label="Acciones">
                       <div className="table-actions">
-                        <Button
-                          variant="secondary"
-                          onClick={() => patchUi({ selectedPersona: p })}
-                        >
+                        <Button variant="secondary" onClick={() => patchUi({ selectedPersona: p })}>
                           Ver detalles
                         </Button>
                       </div>
@@ -307,11 +185,7 @@ export default function PersonasManagementSection({
           </div>
 
           {hasMore ? (
-            <Button
-              variant="secondary"
-              onClick={() => void cargarMasPersonas()}
-              disabled={loadingMore}
-            >
+            <Button variant="secondary" onClick={() => void cargarMas()} disabled={loadingMore}>
               {loadingMore ? "Cargando..." : "Cargar mas personas"}
             </Button>
           ) : null}
@@ -321,14 +195,12 @@ export default function PersonasManagementSection({
       <PersonaCreateModal
         isOpen={ui.showCreateModal}
         onClose={() => patchUi({ showCreateModal: false })}
-        canManagePermissions={canManagePermissions}
         onConfirm={guardarNuevaPersona}
       />
 
       <PersonaEditModal
         isOpen={ui.selectedPersona !== null}
         persona={ui.selectedPersona}
-        canManagePermissions={canManagePermissions}
         onConfirm={guardarEdicion}
         onClose={() => patchUi({ selectedPersona: null })}
       />
