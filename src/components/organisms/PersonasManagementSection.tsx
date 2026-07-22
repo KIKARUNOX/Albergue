@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { ChangeEvent } from "react";
 import Swal from "sweetalert2";
 import { supabase } from "../../supabase";
 import type { Persona, PersonaForm } from "../../type/persona";
@@ -145,7 +146,7 @@ export default function PersonasManagementSection() {
         <Input
           placeholder="Buscar por nombre o cedula..."
           value={ui.query}
-          onChange={(e) => patchUi({ query: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => patchUi({ query: e.target.value })}
         />
         <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
           Agregar persona

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ChangeEvent } from "react";
 import Swal from "sweetalert2";
 import { normalizeName, normalizeCedula } from "../../lib/textNormalization";
 import type { PersonaForm } from "../../type/persona";
@@ -71,22 +72,32 @@ export default function PersonaCreateModal({
     onClose();
   };
 
+  const onInputChange = (e: ChangeEvent<HTMLInputElement>) => setField("nombre", e.target.value);
+  const onInputApe1 = (e: ChangeEvent<HTMLInputElement>) => setField("apellido1", e.target.value);
+  const onInputApe2 = (e: ChangeEvent<HTMLInputElement>) => setField("apellido2", e.target.value);
+  const onInputCedula = (e: ChangeEvent<HTMLInputElement>) => setField("cedula", e.target.value);
+  const onInputEdad = (e: ChangeEvent<HTMLInputElement>) => setField("edad", Number(e.target.value) || 0);
+  const onInputDir = (e: ChangeEvent<HTMLInputElement>) => setField("direccion", e.target.value);
+  const onInputSalud = (e: ChangeEvent<HTMLInputElement>) => setField("estado_salud", e.target.value);
+  const onInputEsc = (e: ChangeEvent<HTMLInputElement>) => setField("escolaridad", e.target.value);
+  const onSelectSexo = (e: ChangeEvent<HTMLSelectElement>) => setField("sexo", e.target.value);
+
   return (
     <Modal isOpen={isOpen} title="Agregar persona" onClose={cerrar}>
       <div className="stack-sm">
-        <Input placeholder="Nombre *" required minLength={2} value={form.nombre} onChange={(e) => setField("nombre", e.target.value)} />
-        <Input placeholder="Primer apellido" value={form.apellido1} onChange={(e) => setField("apellido1", e.target.value)} />
-        <Input placeholder="Segundo apellido" value={form.apellido2} onChange={(e) => setField("apellido2", e.target.value)} />
-        <Label>Sexo<Select value={form.sexo} onChange={(e) => setField("sexo", e.target.value)}>
+        <Input placeholder="Nombre *" required minLength={2} value={form.nombre} onChange={onInputChange} />
+        <Input placeholder="Primer apellido" value={form.apellido1} onChange={onInputApe1} />
+        <Input placeholder="Segundo apellido" value={form.apellido2} onChange={onInputApe2} />
+        <Label>Sexo<Select value={form.sexo} onChange={onSelectSexo}>
           <option value="">Seleccionar...</option>
           <option value="M">Masculino</option>
           <option value="F">Femenino</option>
         </Select></Label>
-        <Input placeholder="Cedula *" required value={form.cedula} onChange={(e) => setField("cedula", e.target.value)} />
-        <Input type="number" min={0} max={120} placeholder="Edad" value={form.edad || ""} onChange={(e) => setField("edad", Number(e.target.value) || 0)} />
-        <Input placeholder="Direccion" value={form.direccion} onChange={(e) => setField("direccion", e.target.value)} />
-        <Input placeholder="Estado de salud" value={form.estado_salud} onChange={(e) => setField("estado_salud", e.target.value)} />
-        <Input placeholder="Escolaridad" value={form.escolaridad} onChange={(e) => setField("escolaridad", e.target.value)} />
+        <Input placeholder="Cedula *" required value={form.cedula} onChange={onInputCedula} />
+        <Input type="number" min={0} max={120} placeholder="Edad" value={form.edad || ""} onChange={onInputEdad} />
+        <Input placeholder="Direccion" value={form.direccion} onChange={onInputDir} />
+        <Input placeholder="Estado de salud" value={form.estado_salud} onChange={onInputSalud} />
+        <Input placeholder="Escolaridad" value={form.escolaridad} onChange={onInputEsc} />
         <Button onClick={() => void guardar()} disabled={saving}>{saving ? "Guardando..." : "Guardar persona"}</Button>
       </div>
     </Modal>
