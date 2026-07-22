@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name Albergue"
+    "deploy": "npm run build && wrangler pages deploy dist --project-name albergue"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
