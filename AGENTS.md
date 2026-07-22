@@ -30,12 +30,11 @@
 
 - **Entrypoint**: `src/main.tsx` → React SPA with `BrowserRouter`
 - **React Compiler** enabled (babel `reactCompilerPreset` plugin in `vite.config.ts`)
-- **Supabase client**: `src/supabase.ts` — exports `supabase` (client) and `ADMIN_EMAIL`
-- **Admin gating**: `ADMIN_EMAIL` from `VITE_ADMIN_EMAIL` env var. Components check `isAdmin` prop to show/hide admin features (personas CRUD, import). Supabase RLS should enforce this server-side.
-- **Routing** (`src/App.tsx`): unauthenticated → login only. Authenticated → dashboard, personas (admin), import (admin)
+- **Supabase client**: `src/supabase.ts` — exports `supabase` client configured for `Albergue` schema
+- **Routing** (`src/App.tsx`): unauthenticated → login only. Authenticated → dashboard, personas, import
 - **Component structure**: `atoms/` (Button, Input, Label, Modal, Select, Spinner, StatusMessage, TextArea), `molecules/` (ExportarSection), `organisms/` (AppHeader, AppNavigation, LoginForm, PersonaCreateModal, PersonaEditModal, PersonasManagementSection, ImportarJovenesSection), `pages/` (DashboardPage, LoginPage, PersonasPageView, ImportarPage)
 - **Styles**: vanilla CSS in `src/styles/` (tokens, base, components, layout, modal, pages). No Tailwind, no CSS-in-JS. `Modal.tsx` imports `modal.css` directly.
-- **Env vars**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ADMIN_EMAIL` — all declared in `src/env.d.ts`
+- **Env vars**: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` — all declared in `src/env.d.ts`
 
 ## Data model
 
@@ -77,8 +76,8 @@ create table personas (
 1. Create project at supabase.com
 2. Run the SQL above in SQL Editor
 3. Enable RLS on `personas` table with appropriate policies
-4. Create admin user in Auth → Users (email must match `VITE_ADMIN_EMAIL`)
-5. Set `.env` with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ADMIN_EMAIL`
+4. Create users in Auth → Users
+5. Set `.env` with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
 
 ## Repo notes
 

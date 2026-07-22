@@ -97,19 +97,19 @@ export default function PersonaEditModal({
       <div className="stack-sm">
         {editing ? (
           <>
-            <Input placeholder="Nombre" required minLength={2} value={form.nombre} onChange={onInputChange} />
-            <Input placeholder="Primer apellido" value={form.apellido1} onChange={onInputApe1} />
-            <Input placeholder="Segundo apellido" value={form.apellido2} onChange={onInputApe2} />
-            <Label>Sexo<Select value={form.sexo} onChange={onSelectSexo}>
+            <Label htmlFor="e-nombre" required>Nombre<Input id="e-nombre" placeholder="Nombre" required minLength={2} value={form.nombre} onChange={onInputChange} /></Label>
+            <Label htmlFor="e-ape1">Primer apellido<Input id="e-ape1" placeholder="Primer apellido" value={form.apellido1} onChange={onInputApe1} /></Label>
+            <Label htmlFor="e-ape2">Segundo apellido<Input id="e-ape2" placeholder="Segundo apellido" value={form.apellido2} onChange={onInputApe2} /></Label>
+            <Label htmlFor="e-sexo">Sexo<Select id="e-sexo" value={form.sexo} onChange={onSelectSexo}>
               <option value="">Seleccionar...</option>
               <option value="M">Masculino</option>
               <option value="F">Femenino</option>
             </Select></Label>
-            <Input placeholder="Cedula" required value={form.cedula} onChange={onInputCedula} />
-            <Input type="number" min={0} max={120} placeholder="Edad" value={form.edad || ""} onChange={onInputEdad} />
-            <Input placeholder="Direccion" value={form.direccion} onChange={onInputDir} />
-            <Input placeholder="Estado de salud" value={form.estado_salud} onChange={onInputSalud} />
-            <Input placeholder="Escolaridad" value={form.escolaridad} onChange={onInputEsc} />
+            <Label htmlFor="e-cedula" required>Cedula<Input id="e-cedula" placeholder="Cedula" required value={form.cedula} onChange={onInputCedula} /></Label>
+            <Label htmlFor="e-edad">Edad<Input id="e-edad" type="number" min={0} max={120} placeholder="Edad" value={form.edad || ""} onChange={onInputEdad} /></Label>
+            <Label htmlFor="e-dir">Direccion<Input id="e-dir" placeholder="Direccion" value={form.direccion} onChange={onInputDir} /></Label>
+            <Label htmlFor="e-salud">Estado de salud<Input id="e-salud" placeholder="Estado de salud" value={form.estado_salud} onChange={onInputSalud} /></Label>
+            <Label htmlFor="e-esc">Escolaridad<Input id="e-esc" placeholder="Escolaridad" value={form.escolaridad} onChange={onInputEsc} /></Label>
             <div className="table-actions">
               <Button onClick={() => void guardar()} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
               <Button variant="secondary" onClick={() => setEditing(false)}>Cancelar</Button>

@@ -5,5 +5,3 @@ export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY,
   { db: { schema: "Albergue" } },
 );
-
-export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;

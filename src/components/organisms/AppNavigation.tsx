@@ -1,25 +1,17 @@
 import { NavLink } from "react-router-dom";
 
-type AppNavigationProps = {
-  isAdmin: boolean;
-};
-
-export default function AppNavigation({ isAdmin }: AppNavigationProps) {
+export default function AppNavigation() {
   return (
     <nav className="app-nav" aria-label="Secciones principales">
       <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
         Inicio
       </NavLink>
-      {isAdmin ? (
-        <NavLink to="/personas" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-          Personas
-        </NavLink>
-      ) : null}
-      {isAdmin ? (
-        <NavLink to="/import" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-          Importar
-        </NavLink>
-      ) : null}
+      <NavLink to="/personas" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+        Personas
+      </NavLink>
+      <NavLink to="/import" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+        Importar
+      </NavLink>
     </nav>
   );
 }

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import type { ReactElement } from "react";
 import type { User } from "@supabase/supabase-js";
-import { supabase, ADMIN_EMAIL } from "./supabase";
+import { supabase } from "./supabase";
 import LoginPage from "./components/pages/LoginPage";
 import DashboardPage from "./components/pages/DashboardPage";
 import ImportarPage from "./components/pages/ImportarPage";
@@ -10,15 +9,9 @@ import AppHeader from "./components/organisms/AppHeader";
 import AppNavigation from "./components/organisms/AppNavigation";
 import { Navigate, Route, Routes } from "react-router-dom";
 
-function ProtectedRoute({ allow, element }: { allow: boolean; element: ReactElement }) {
-  if (!allow) return <Navigate to="/" replace />;
-  return element;
-}
-
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -31,14 +24,12 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      setIsAdmin(session?.user?.email === ADMIN_EMAIL);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
-        setIsAdmin(session?.user?.email === ADMIN_EMAIL);
       },
     );
 
@@ -61,19 +52,13 @@ function App() {
   return (
     <div className="app-shell">
       <AppHeader onLogout={() => void handleLogout()} email={user.email} />
-      <AppNavigation isAdmin={isAdmin} />
+      <AppNavigation />
 
       <main className="page-body">
         <Routes>
           <Route path="/" element={<DashboardPage email={user.email} />} />
-          <Route
-            path="/personas"
-            element={<ProtectedRoute allow={isAdmin} element={<PersonasPageView />} />}
-          />
-          <Route
-            path="/import"
-            element={<ProtectedRoute allow={isAdmin} element={<ImportarPage />} />}
-          />
+          <Route path="/personas" element={<PersonasPageView />} />
+          <Route path="/import" element={<ImportarPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

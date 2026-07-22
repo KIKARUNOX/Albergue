@@ -85,19 +85,19 @@ export default function PersonaCreateModal({
   return (
     <Modal isOpen={isOpen} title="Agregar persona" onClose={cerrar}>
       <div className="stack-sm">
-        <Input placeholder="Nombre *" required minLength={2} value={form.nombre} onChange={onInputChange} />
-        <Input placeholder="Primer apellido" value={form.apellido1} onChange={onInputApe1} />
-        <Input placeholder="Segundo apellido" value={form.apellido2} onChange={onInputApe2} />
-        <Label>Sexo<Select value={form.sexo} onChange={onSelectSexo}>
+        <Label htmlFor="c-nombre" required>Nombre<Input id="c-nombre" placeholder="Nombre" required minLength={2} value={form.nombre} onChange={onInputChange} /></Label>
+        <Label htmlFor="c-ape1">Primer apellido<Input id="c-ape1" placeholder="Primer apellido" value={form.apellido1} onChange={onInputApe1} /></Label>
+        <Label htmlFor="c-ape2">Segundo apellido<Input id="c-ape2" placeholder="Segundo apellido" value={form.apellido2} onChange={onInputApe2} /></Label>
+        <Label htmlFor="c-sexo">Sexo<Select id="c-sexo" value={form.sexo} onChange={onSelectSexo}>
           <option value="">Seleccionar...</option>
           <option value="M">Masculino</option>
           <option value="F">Femenino</option>
         </Select></Label>
-        <Input placeholder="Cedula *" required value={form.cedula} onChange={onInputCedula} />
-        <Input type="number" min={0} max={120} placeholder="Edad" value={form.edad || ""} onChange={onInputEdad} />
-        <Input placeholder="Direccion" value={form.direccion} onChange={onInputDir} />
-        <Input placeholder="Estado de salud" value={form.estado_salud} onChange={onInputSalud} />
-        <Input placeholder="Escolaridad" value={form.escolaridad} onChange={onInputEsc} />
+        <Label htmlFor="c-cedula" required>Cedula<Input id="c-cedula" placeholder="Cedula" required value={form.cedula} onChange={onInputCedula} /></Label>
+        <Label htmlFor="c-edad">Edad<Input id="c-edad" type="number" min={0} max={120} placeholder="Edad" value={form.edad || ""} onChange={onInputEdad} /></Label>
+        <Label htmlFor="c-dir">Direccion<Input id="c-dir" placeholder="Direccion" value={form.direccion} onChange={onInputDir} /></Label>
+        <Label htmlFor="c-salud">Estado de salud<Input id="c-salud" placeholder="Estado de salud" value={form.estado_salud} onChange={onInputSalud} /></Label>
+        <Label htmlFor="c-esc">Escolaridad<Input id="c-esc" placeholder="Escolaridad" value={form.escolaridad} onChange={onInputEsc} /></Label>
         <Button onClick={() => void guardar()} disabled={saving}>{saving ? "Guardando..." : "Guardar persona"}</Button>
       </div>
     </Modal>
