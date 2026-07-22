@@ -1,3 +1,4 @@
+import type { ChangeEvent } from "react";
 import useLogin from "../../hooks/useLogin";
 import Input from "../atoms/Input";
 import Button from "../atoms/Button";
@@ -17,7 +18,7 @@ export default function LoginForm() {
             type="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
           />
           <Input
             type="password"
@@ -25,7 +26,7 @@ export default function LoginForm() {
             required
             minLength={6}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
           />
           <Button type="submit" disabled={loading}>
             {loading ? "Ingresando..." : "Ingresar"}
