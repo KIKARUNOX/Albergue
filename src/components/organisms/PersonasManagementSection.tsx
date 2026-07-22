@@ -52,7 +52,26 @@ export default function PersonasManagementSection() {
     return data as Persona[];
   };
 
-  const loadInitial = async () => {
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const data = await fetchPersonas(0, PAGE_SIZE - 1);
+        if (cancelled) return;
+        setPersonas(data);
+        setHasMore(data.length === PAGE_SIZE);
+        setPage(0);
+      } catch {
+        if (cancelled) return;
+        setPersonas([]);
+      }
+      if (!cancelled) patchUi({ loading: false });
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const recargarPersonas = async () => {
     patchUi({ loading: true });
     try {
       const data = await fetchPersonas(0, PAGE_SIZE - 1);
@@ -60,19 +79,10 @@ export default function PersonasManagementSection() {
       setHasMore(data.length === PAGE_SIZE);
       setPage(0);
     } catch {
-      patchUi({ mensaje: "No se pudieron cargar las personas." });
       setPersonas([]);
     }
     patchUi({ loading: false });
   };
-
-  useEffect(() => {
-    let mounted = true;
-    void loadInitial().then(() => {
-      if (!mounted) return;
-    });
-    return () => { mounted = false; };
-  }, []);
 
   const cargarMas = async () => {
     if (!hasMore || loadingMore) return;
