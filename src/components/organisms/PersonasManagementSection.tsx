@@ -120,7 +120,7 @@ export default function PersonasManagementSection() {
     }
     patchUi({ showCreateModal: false, mensaje: "Persona registrada correctamente." });
     await Swal.fire({ icon: "success", title: "Registro exitoso", text: "Persona registrada correctamente." });
-    await loadInitial();
+    await recargarPersonas();
   };
 
   const guardarEdicion = async (id: string, form: PersonaForm) => {
@@ -134,7 +134,7 @@ export default function PersonasManagementSection() {
     }
     patchUi({ mensaje: "Persona actualizada correctamente.", selectedPersona: null });
     await Swal.fire({ icon: "success", title: "Actualizacion exitosa", text: "Persona actualizada correctamente." });
-    await loadInitial();
+    await recargarPersonas();
   };
 
   return (
