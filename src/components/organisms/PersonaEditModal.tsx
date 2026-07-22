@@ -88,8 +88,8 @@ export default function PersonaEditModal({
   const onInputCedula = (e: ChangeEvent<HTMLInputElement>) => setField("cedula", e.target.value);
   const onInputEdad = (e: ChangeEvent<HTMLInputElement>) => setField("edad", Number(e.target.value) || 0);
   const onInputDir = (e: ChangeEvent<HTMLInputElement>) => setField("direccion", e.target.value);
-  const onInputSalud = (e: ChangeEvent<HTMLInputElement>) => setField("estado_salud", e.target.value);
-  const onInputEsc = (e: ChangeEvent<HTMLInputElement>) => setField("escolaridad", e.target.value);
+  const onSelectSalud = (e: ChangeEvent<HTMLSelectElement>) => setField("estado_salud", e.target.value);
+  const onSelectEsc = (e: ChangeEvent<HTMLSelectElement>) => setField("escolaridad", e.target.value);
   const onSelectSexo = (e: ChangeEvent<HTMLSelectElement>) => setField("sexo", e.target.value);
 
   return (
@@ -97,7 +97,7 @@ export default function PersonaEditModal({
       <div className="stack-sm">
         {editing ? (
           <>
-            <Label htmlFor="e-nombre" required>Nombre<Input id="e-nombre" placeholder="Nombre" required minLength={2} value={form.nombre} onChange={onInputChange} /></Label>
+            <Label htmlFor="e-nombre">Nombre *<Input id="e-nombre" placeholder="Nombre" required minLength={2} value={form.nombre} onChange={onInputChange} /></Label>
             <Label htmlFor="e-ape1">Primer apellido<Input id="e-ape1" placeholder="Primer apellido" value={form.apellido1} onChange={onInputApe1} /></Label>
             <Label htmlFor="e-ape2">Segundo apellido<Input id="e-ape2" placeholder="Segundo apellido" value={form.apellido2} onChange={onInputApe2} /></Label>
             <Label htmlFor="e-sexo">Sexo<Select id="e-sexo" value={form.sexo} onChange={onSelectSexo}>
@@ -105,11 +105,20 @@ export default function PersonaEditModal({
               <option value="M">Masculino</option>
               <option value="F">Femenino</option>
             </Select></Label>
-            <Label htmlFor="e-cedula" required>Cedula<Input id="e-cedula" placeholder="Cedula" required value={form.cedula} onChange={onInputCedula} /></Label>
+            <Label htmlFor="e-cedula">Cedula *<Input id="e-cedula" placeholder="Cedula" required value={form.cedula} onChange={onInputCedula} /></Label>
             <Label htmlFor="e-edad">Edad<Input id="e-edad" type="number" min={0} max={120} placeholder="Edad" value={form.edad || ""} onChange={onInputEdad} /></Label>
             <Label htmlFor="e-dir">Direccion<Input id="e-dir" placeholder="Direccion" value={form.direccion} onChange={onInputDir} /></Label>
-            <Label htmlFor="e-salud">Estado de salud<Input id="e-salud" placeholder="Estado de salud" value={form.estado_salud} onChange={onInputSalud} /></Label>
-            <Label htmlFor="e-esc">Escolaridad<Input id="e-esc" placeholder="Escolaridad" value={form.escolaridad} onChange={onInputEsc} /></Label>
+            <Label htmlFor="e-salud">Estado de salud<Select id="e-salud" value={form.estado_salud} onChange={onSelectSalud}>
+              <option value="">Seleccionar...</option>
+              <option value="Sano">Sano</option>
+              <option value="Enfermo">Enfermo</option>
+            </Select></Label>
+            <Label htmlFor="e-esc">Escolaridad<Select id="e-esc" value={form.escolaridad} onChange={onSelectEsc}>
+              <option value="">Seleccionar...</option>
+              <option value="Primaria">Primaria (1 a 6 grado): Abarca de los 7 a los 12 años de edad, enfocada en materias básicas como español, matemáticas y ciencias.</option>
+              <option value="Secundaria">Secundaria (I, II y III ciclo / Diversificada): Se divide en la educación general básica y la educación diversificada, con opciones académicas o técnicas.</option>
+              <option value="Superior">Superior</option>
+            </Select></Label>
             <div className="table-actions">
               <Button onClick={() => void guardar()} disabled={saving}>{saving ? "Guardando..." : "Guardar cambios"}</Button>
               <Button variant="secondary" onClick={() => setEditing(false)}>Cancelar</Button>
