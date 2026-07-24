@@ -223,9 +223,20 @@ button:disabled {
 }
 
 .table-toolbar {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.6rem;
   margin-bottom: 0.8rem;
+}
+
+.toolbar-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.toolbar-filters {
+  display: grid;
+  gap: 0.6rem;
 }
 
 .personas-count {
@@ -537,6 +548,10 @@ button:disabled {
 
   .table-toolbar {
     gap: 0.5rem;
+  }
+
+  .toolbar-row {
+    flex-direction: column;
   }
 
   .table-scroll {

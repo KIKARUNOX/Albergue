@@ -15,6 +15,7 @@ import Spinner from "../atoms/Spinner";
 type UiState = {
   query: string;
   sexoEdadFilter: string;
+  direccionFilter: string;
   mensaje: string;
   loading: boolean;
   selectedPersona: Persona | null;
@@ -24,6 +25,7 @@ type UiState = {
 const initialUiState: UiState = {
   query: "",
   sexoEdadFilter: "",
+  direccionFilter: "",
   mensaje: "",
   loading: true,
   selectedPersona: null,
@@ -39,7 +41,7 @@ const RELACION_ORDEN: Record<string, number> = {
   "Otro": 5,
 };
 
-const PAGE_SIZE = 40;
+const PAGE_SIZE = 100;
 
 export default function PersonasManagementSection() {
   "use no memo";
@@ -49,6 +51,7 @@ export default function PersonasManagementSection() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const patchUi = (next: Partial<UiState>) => {
     setUi((prev) => ({ ...prev, ...next }));
@@ -137,6 +140,10 @@ export default function PersonasManagementSection() {
         }
       });
     }
+    const dq = ui.direccionFilter.trim().toLowerCase();
+    if (dq) {
+      result = result.filter((p) => (p.direccion || "").toLowerCase().includes(dq));
+    }
 
     const grupos: Record<string, Persona[]> = {};
     const sinFamilia: Persona[] = [];
@@ -164,8 +171,14 @@ export default function PersonasManagementSection() {
     }
     ordenados.push(...sinFamilia);
 
+    ordenados.sort((a, b) => {
+      const aSalio = a.estado === "Salio" ? 1 : 0;
+      const bSalio = b.estado === "Salio" ? 1 : 0;
+      return aSalio - bSalio;
+    });
+
     return ordenados;
-  }, [personas, ui.query, ui.sexoEdadFilter]);
+  }, [personas, ui.query, ui.sexoEdadFilter, ui.direccionFilter]);
 
   const guardarNuevaPersona = async (form: PersonaForm) => {
     const { error } = await supabase.from("personas").insert(form);
@@ -200,28 +213,42 @@ export default function PersonasManagementSection() {
       <StatusMessage message={ui.mensaje} />
 
       <div className="table-toolbar">
-        <Input
-          placeholder="Buscar por nombre o cedula..."
-          value={ui.query}
-          onChange={(e: ChangeEvent<HTMLInputElement>) => patchUi({ query: e.target.value })}
-        />
-        <Select
-          value={ui.sexoEdadFilter}
-          onChange={(e: ChangeEvent<HTMLSelectElement>) => patchUi({ sexoEdadFilter: e.target.value })}
-        >
-          <option value="">Todos</option>
-          <option value="Hombres">Hombres</option>
-          <option value="Mujeres">Mujeres</option>
-          <option value="Menores Hombres">Menores Hombres (&lt;18)</option>
-          <option value="Menores Mujeres">Menores Mujeres (&lt;18)</option>
-          <option value="Adultos Hombres">Adultos Hombres (18-64)</option>
-          <option value="Adultos Mujeres">Adultos Mujeres (18-64)</option>
-          <option value="Mayores Hombres">Mayores Hombres (65+)</option>
-          <option value="Mayores Mujeres">Mayores Mujeres (65+)</option>
-        </Select>
-        <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
-          Agregar persona
-        </Button>
+        <div className="toolbar-row">
+          <Button variant="secondary" onClick={() => setShowFilters((v) => !v)}>
+            {showFilters ? "Ocultar filtros" : "Filtrar"}
+          </Button>
+          <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
+            Agregar persona
+          </Button>
+        </div>
+        {showFilters && (
+          <div className="toolbar-filters">
+            <Input
+              placeholder="Nombre o cedula..."
+              value={ui.query}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => patchUi({ query: e.target.value })}
+            />
+            <Input
+              placeholder="Direccion..."
+              value={ui.direccionFilter}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => patchUi({ direccionFilter: e.target.value })}
+            />
+            <Select
+              value={ui.sexoEdadFilter}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => patchUi({ sexoEdadFilter: e.target.value })}
+            >
+              <option value="">Todos</option>
+              <option value="Hombres">Hombres</option>
+              <option value="Mujeres">Mujeres</option>
+              <option value="Menores Hombres">Menores Hombres (&lt;18)</option>
+              <option value="Menores Mujeres">Menores Mujeres (&lt;18)</option>
+              <option value="Adultos Hombres">Adultos Hombres (18-64)</option>
+              <option value="Adultos Mujeres">Adultos Mujeres (18-64)</option>
+              <option value="Mayores Hombres">Mayores Hombres (65+)</option>
+              <option value="Mayores Mujeres">Mayores Mujeres (65+)</option>
+            </Select>
+          </div>
+        )}
       </div>
 
       {ui.loading ? (
@@ -229,7 +256,7 @@ export default function PersonasManagementSection() {
       ) : (
         <div className="stack-sm">
           <p className="personas-count">
-            {ui.query.trim() || ui.sexoEdadFilter
+            {ui.query.trim() || ui.sexoEdadFilter || ui.direccionFilter.trim()
               ? `${filtered.length} de ${personas.length} personas`
               : `${personas.length} personas`}
           </p>
