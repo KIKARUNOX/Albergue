@@ -57,6 +57,7 @@ export default function ImportarJovenesSection() {
             escolaridad: toText(findValue(r, ["escolaridad", "nivel educativo", "estudios", "grado"])),
             familiar: toText(findValue(r, ["familiar", "cabeza de familia", "familia"])),
             relacion: toText(findValue(r, ["relacion", "relación", "parentesco", "relacion familiar"])),
+            estado: toText(findValue(r, ["estado", "status", "estado persona"])),
           };
 
           const { error } = await supabase.from("personas").insert(row);
@@ -88,7 +89,7 @@ export default function ImportarJovenesSection() {
     <PageSection title="Importar personas desde Excel">
       <p className="small-text">
         Encabezados soportados: NOMBRE, PRIMER APELLIDO, SEGUNDO APELLIDO, SEXO, CEDULA, EDAD,
-        DIRECCION, ESTADO DE SALUD, ESCOLARIDAD, FAMILIAR, RELACION.
+        DIRECCION, ESTADO DE SALUD, ESCOLARIDAD, FAMILIAR, RELACION, ESTADO.
       </p>
       <input type="file" accept=".xlsx,.xls" onChange={onFileChange} disabled={loading} />
       {loading ? <p>Cargando...</p> : null}

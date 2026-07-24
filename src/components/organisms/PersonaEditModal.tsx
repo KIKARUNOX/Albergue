@@ -42,6 +42,7 @@ export default function PersonaEditModal({
     escolaridad: "",
     familiar: "",
     relacion: "",
+    estado: "",
   });
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -74,6 +75,7 @@ export default function PersonaEditModal({
         escolaridad: persona.escolaridad ?? "",
         familiar: persona.familiar ?? "",
         relacion: persona.relacion ?? "",
+        estado: persona.estado ?? "",
       });
       setEditing(false);
     }
@@ -119,6 +121,7 @@ export default function PersonaEditModal({
         escolaridad: form.escolaridad.trim(),
         familiar: form.relacion === "Cabeza de familia" ? nombreCompleto : form.familiar.trim(),
         relacion: form.relacion.trim(),
+        estado: form.estado.trim(),
       });
     } finally {
       setSaving(false);
@@ -149,6 +152,8 @@ export default function PersonaEditModal({
     setField("relacion", e.target.value);
   const onSelectFamiliar = (e: ChangeEvent<HTMLSelectElement>) =>
     setField("familiar", e.target.value);
+  const onSelectEstado = (e: ChangeEvent<HTMLSelectElement>) =>
+    setField("estado", e.target.value);
 
   const esCabeza = form.relacion === "Cabeza de familia";
 
@@ -288,6 +293,16 @@ export default function PersonaEditModal({
                 </Select>
               </Label>
             )}
+            <Label htmlFor="e-estado">
+              Estado
+              <Select id="e-estado" value={form.estado} onChange={onSelectEstado}>
+                <option value="">Seleccionar...</option>
+                <option value="Presente">presente</option>
+                <option value="Salio">Salio</option>
+                <option value="Ausente">Ausente</option>
+                <option value="Salio con permiso">Salio con permiso</option>
+              </Select>
+            </Label>
             <div className="table-actions">
               <Button onClick={() => void guardar()} disabled={saving}>
                 {saving ? "Guardando..." : "Guardar cambios"}
@@ -331,6 +346,9 @@ export default function PersonaEditModal({
             </p>
             <p>
               <strong>Relacion:</strong> {persona.relacion || "-"}
+            </p>
+            <p>
+              <strong>Estado:</strong> {persona.estado || "-"}
             </p>
             <div className="table-actions">
               <Button onClick={() => setEditing(true)}>Editar</Button>

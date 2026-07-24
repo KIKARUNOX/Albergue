@@ -22,6 +22,7 @@ const emptyForm: PersonaForm = {
   escolaridad: "",
   familiar: "",
   relacion: "",
+  estado: "",
 };
 
 type Cabeza = {
@@ -99,6 +100,7 @@ export default function PersonaCreateModal({
         escolaridad: form.escolaridad.trim(),
         familiar: form.relacion === "Cabeza de familia" ? nombreCompleto : form.familiar.trim(),
         relacion: form.relacion.trim(),
+        estado: form.estado.trim(),
       });
       setForm(emptyForm);
     } finally {
@@ -133,6 +135,8 @@ export default function PersonaCreateModal({
     setField("relacion", e.target.value);
   const onSelectFamiliar = (e: ChangeEvent<HTMLSelectElement>) =>
     setField("familiar", e.target.value);
+  const onSelectEstado = (e: ChangeEvent<HTMLSelectElement>) =>
+    setField("estado", e.target.value);
 
   const esCabeza = form.relacion === "Cabeza de familia";
 
@@ -262,6 +266,16 @@ export default function PersonaCreateModal({
             </Select>
           </Label>
         )}
+        <Label htmlFor="c-estado">
+          Estado
+          <Select id="c-estado" value={form.estado} onChange={onSelectEstado}>
+            <option value="">Seleccionar...</option>
+            <option value="Presente">presente</option>
+            <option value="Salio">Salio</option>
+            <option value="Ausente">Ausente</option>
+            <option value="Salio con permiso">Salio con permiso</option>
+          </Select>
+        </Label>
         <Button onClick={() => void guardar()} disabled={saving}>
           {saving ? "Guardando..." : "Guardar persona"}
         </Button>

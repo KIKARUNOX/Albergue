@@ -13,9 +13,12 @@ type Stats = {
   total: number;
   hombres: number;
   mujeres: number;
-  menores18: number;
-  adultos: number;
-  adultosMayores: number;
+  menoresHombres: number;
+  menoresMujeres: number;
+  adultosHombres: number;
+  adultosMujeres: number;
+  mayoresHombres: number;
+  mayoresMujeres: number;
   familias: number;
 };
 
@@ -34,12 +37,15 @@ export default function DashboardPage({ email }: DashboardPageProps) {
       const total = rows.length;
       const hombres = rows.filter((r) => r.sexo === "M").length;
       const mujeres = rows.filter((r) => r.sexo === "F").length;
-      const menores18 = rows.filter((r) => (r.edad ?? 0) < 18).length;
-      const adultos = rows.filter((r) => (r.edad ?? 0) >= 18 && (r.edad ?? 0) < 65).length;
-      const adultosMayores = rows.filter((r) => (r.edad ?? 0) >= 65).length;
+      const menoresHombres = rows.filter((r) => (r.edad ?? 0) < 18 && r.sexo === "M").length;
+      const menoresMujeres = rows.filter((r) => (r.edad ?? 0) < 18 && r.sexo === "F").length;
+      const adultosHombres = rows.filter((r) => (r.edad ?? 0) >= 18 && (r.edad ?? 0) < 65 && r.sexo === "M").length;
+      const adultosMujeres = rows.filter((r) => (r.edad ?? 0) >= 18 && (r.edad ?? 0) < 65 && r.sexo === "F").length;
+      const mayoresHombres = rows.filter((r) => (r.edad ?? 0) >= 65 && r.sexo === "M").length;
+      const mayoresMujeres = rows.filter((r) => (r.edad ?? 0) >= 65 && r.sexo === "F").length;
       const familias = rows.filter((r) => r.relacion === "Cabeza de familia").length;
 
-      setStats({ total, hombres, mujeres, menores18, adultos, adultosMayores, familias });
+      setStats({ total, hombres, mujeres, menoresHombres, menoresMujeres, adultosHombres, adultosMujeres, mayoresHombres, mayoresMujeres, familias });
       setLoading(false);
     };
 
@@ -83,16 +89,28 @@ export default function DashboardPage({ email }: DashboardPageProps) {
               <h3 className="stats-subtitle">Por grupo de edad</h3>
               <div className="stats-grid">
                 <div className="stat-card stat-card--blue">
-                  <span className="stat-value">{stats.menores18}</span>
-                  <span className="stat-label">Menores de 18</span>
+                  <span className="stat-value">{stats.menoresHombres}</span>
+                  <span className="stat-label">Menores Hombres (&lt;18)</span>
+                </div>
+                <div className="stat-card stat-card--blue">
+                  <span className="stat-value">{stats.menoresMujeres}</span>
+                  <span className="stat-label">Menores Mujeres (&lt;18)</span>
                 </div>
                 <div className="stat-card stat-card--green">
-                  <span className="stat-value">{stats.adultos}</span>
-                  <span className="stat-label">Adultos (18-64)</span>
+                  <span className="stat-value">{stats.adultosHombres}</span>
+                  <span className="stat-label">Adultos Hombres (18-64)</span>
+                </div>
+                <div className="stat-card stat-card--green">
+                  <span className="stat-value">{stats.adultosMujeres}</span>
+                  <span className="stat-label">Adultos Mujeres (18-64)</span>
                 </div>
                 <div className="stat-card stat-card--orange">
-                  <span className="stat-value">{stats.adultosMayores}</span>
-                  <span className="stat-label">Adultos mayores (65+)</span>
+                  <span className="stat-value">{stats.mayoresHombres}</span>
+                  <span className="stat-label">Mayores Hombres (65+)</span>
+                </div>
+                <div className="stat-card stat-card--orange">
+                  <span className="stat-value">{stats.mayoresMujeres}</span>
+                  <span className="stat-label">Mayores Mujeres (65+)</span>
                 </div>
               </div>
             </>

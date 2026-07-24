@@ -127,9 +127,12 @@ export default function PersonasManagementSection() {
         switch (ui.sexoEdadFilter) {
           case "Hombres": return p.sexo === "M";
           case "Mujeres": return p.sexo === "F";
-          case "Menores": return (p.edad ?? 0) < 18;
-          case "Adultos": return (p.edad ?? 0) >= 18 && (p.edad ?? 0) < 65;
-          case "Mayores": return (p.edad ?? 0) >= 65;
+          case "Menores Hombres": return (p.edad ?? 0) < 18 && p.sexo === "M";
+          case "Menores Mujeres": return (p.edad ?? 0) < 18 && p.sexo === "F";
+          case "Adultos Hombres": return (p.edad ?? 0) >= 18 && (p.edad ?? 0) < 65 && p.sexo === "M";
+          case "Adultos Mujeres": return (p.edad ?? 0) >= 18 && (p.edad ?? 0) < 65 && p.sexo === "F";
+          case "Mayores Hombres": return (p.edad ?? 0) >= 65 && p.sexo === "M";
+          case "Mayores Mujeres": return (p.edad ?? 0) >= 65 && p.sexo === "F";
           default: return true;
         }
       });
@@ -209,9 +212,12 @@ export default function PersonasManagementSection() {
           <option value="">Todos</option>
           <option value="Hombres">Hombres</option>
           <option value="Mujeres">Mujeres</option>
-          <option value="Menores">Menores (&lt;18)</option>
-          <option value="Adultos">Adultos (18-64)</option>
-          <option value="Mayores">Mayores (65+)</option>
+          <option value="Menores Hombres">Menores Hombres (&lt;18)</option>
+          <option value="Menores Mujeres">Menores Mujeres (&lt;18)</option>
+          <option value="Adultos Hombres">Adultos Hombres (18-64)</option>
+          <option value="Adultos Mujeres">Adultos Mujeres (18-64)</option>
+          <option value="Mayores Hombres">Mayores Hombres (65+)</option>
+          <option value="Mayores Mujeres">Mayores Mujeres (65+)</option>
         </Select>
         <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
           Agregar persona
@@ -237,6 +243,7 @@ export default function PersonasManagementSection() {
                   <th>Sexo</th>
                   <th>Familiar</th>
                   <th>Relacion</th>
+                  <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -251,6 +258,7 @@ export default function PersonasManagementSection() {
                     <td data-label="Sexo">{p.sexo}</td>
                     <td data-label="Familiar">{p.familiar || "-"}</td>
                     <td data-label="Relacion">{p.relacion || "-"}</td>
+                    <td data-label="Estado">{p.estado || "-"}</td>
                     <td data-label="Acciones">
                       <div className="table-actions">
                         <Button variant="secondary" onClick={() => patchUi({ selectedPersona: p })}>

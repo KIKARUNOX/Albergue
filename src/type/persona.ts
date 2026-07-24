@@ -11,6 +11,7 @@ export type Persona = {
   escolaridad: string;
   familiar: string;
   relacion: string;
+  estado: string;
   created_at?: string;
 };
 
@@ -26,4 +27,5 @@ export type PersonaForm = {
   escolaridad: string;
   familiar: string;
   relacion: string;
+  estado: string;
 };
