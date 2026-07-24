@@ -5,6 +5,7 @@ import { supabase } from "../../supabase";
 import type { Persona, PersonaForm } from "../../type/persona";
 import Button from "../atoms/Button";
 import Input from "../atoms/Input";
+import Select from "../atoms/Select";
 import PageSection from "../templates/PageSection";
 import StatusMessage from "../atoms/StatusMessage";
 import PersonaCreateModal from "./PersonaCreateModal";
@@ -13,6 +14,7 @@ import Spinner from "../atoms/Spinner";
 
 type UiState = {
   query: string;
+  sexoEdadFilter: string;
   mensaje: string;
   loading: boolean;
   selectedPersona: Persona | null;
@@ -21,10 +23,20 @@ type UiState = {
 
 const initialUiState: UiState = {
   query: "",
+  sexoEdadFilter: "",
   mensaje: "",
   loading: true,
   selectedPersona: null,
   showCreateModal: false,
+};
+
+const RELACION_ORDEN: Record<string, number> = {
+  "Cabeza de familia": 0,
+  "Conyuge": 1,
+  "Padre/Madre": 2,
+  "Hijo/a": 3,
+  "Hermano/a": 4,
+  "Otro": 5,
 };
 
 const PAGE_SIZE = 40;
@@ -46,7 +58,7 @@ export default function PersonasManagementSection() {
     const { data, error } = await supabase
       .from("personas")
       .select("*")
-      .order("nombre", { ascending: true })
+      .order("created_at", { ascending: false })
       .range(from, to);
 
     if (error) throw error;
@@ -102,13 +114,55 @@ export default function PersonasManagementSection() {
   };
 
   const filtered = useMemo(() => {
+    let result = personas;
     const q = ui.query.trim().toLowerCase();
-    if (!q) return personas;
-    return personas.filter((p) => {
-      const fullName = `${p.nombre} ${p.apellido1} ${p.apellido2}`.toLowerCase();
-      return fullName.includes(q) || p.cedula.includes(q);
-    });
-  }, [personas, ui.query]);
+    if (q) {
+      result = result.filter((p) => {
+        const fullName = `${p.nombre} ${p.apellido1} ${p.apellido2}`.toLowerCase();
+        return fullName.includes(q) || p.cedula.includes(q);
+      });
+    }
+    if (ui.sexoEdadFilter) {
+      result = result.filter((p) => {
+        switch (ui.sexoEdadFilter) {
+          case "Hombres": return p.sexo === "M";
+          case "Mujeres": return p.sexo === "F";
+          case "Menores": return (p.edad ?? 0) < 18;
+          case "Adultos": return (p.edad ?? 0) >= 18 && (p.edad ?? 0) < 65;
+          case "Mayores": return (p.edad ?? 0) >= 65;
+          default: return true;
+        }
+      });
+    }
+
+    const grupos: Record<string, Persona[]> = {};
+    const sinFamilia: Persona[] = [];
+    for (const p of result) {
+      if (p.familiar) {
+        const arr = grupos[p.familiar];
+        if (arr) {
+          arr.push(p);
+        } else {
+          grupos[p.familiar] = [p];
+        }
+      } else {
+        sinFamilia.push(p);
+      }
+    }
+
+    const ordenados: Persona[] = [];
+    for (const miembros of Object.values(grupos)) {
+      miembros.sort((a, b) => {
+        const ra = RELACION_ORDEN[a.relacion] ?? 99;
+        const rb = RELACION_ORDEN[b.relacion] ?? 99;
+        return ra - rb;
+      });
+      ordenados.push(...miembros);
+    }
+    ordenados.push(...sinFamilia);
+
+    return ordenados;
+  }, [personas, ui.query, ui.sexoEdadFilter]);
 
   const guardarNuevaPersona = async (form: PersonaForm) => {
     const { error } = await supabase.from("personas").insert(form);
@@ -148,6 +202,17 @@ export default function PersonasManagementSection() {
           value={ui.query}
           onChange={(e: ChangeEvent<HTMLInputElement>) => patchUi({ query: e.target.value })}
         />
+        <Select
+          value={ui.sexoEdadFilter}
+          onChange={(e: ChangeEvent<HTMLSelectElement>) => patchUi({ sexoEdadFilter: e.target.value })}
+        >
+          <option value="">Todos</option>
+          <option value="Hombres">Hombres</option>
+          <option value="Mujeres">Mujeres</option>
+          <option value="Menores">Menores (&lt;18)</option>
+          <option value="Adultos">Adultos (18-64)</option>
+          <option value="Mayores">Mayores (65+)</option>
+        </Select>
         <Button variant="secondary" onClick={() => patchUi({ showCreateModal: true })}>
           Agregar persona
         </Button>
@@ -158,7 +223,7 @@ export default function PersonasManagementSection() {
       ) : (
         <div className="stack-sm">
           <p className="personas-count">
-            {ui.query.trim()
+            {ui.query.trim() || ui.sexoEdadFilter
               ? `${filtered.length} de ${personas.length} personas`
               : `${personas.length} personas`}
           </p>
@@ -170,6 +235,8 @@ export default function PersonasManagementSection() {
                   <th>Cedula</th>
                   <th>Edad</th>
                   <th>Sexo</th>
+                  <th>Familiar</th>
+                  <th>Relacion</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -182,6 +249,8 @@ export default function PersonasManagementSection() {
                     <td data-label="Cedula">{p.cedula}</td>
                     <td data-label="Edad">{p.edad}</td>
                     <td data-label="Sexo">{p.sexo}</td>
+                    <td data-label="Familiar">{p.familiar || "-"}</td>
+                    <td data-label="Relacion">{p.relacion || "-"}</td>
                     <td data-label="Acciones">
                       <div className="table-actions">
                         <Button variant="secondary" onClick={() => patchUi({ selectedPersona: p })}>

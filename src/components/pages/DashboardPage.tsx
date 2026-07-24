@@ -14,6 +14,9 @@ type Stats = {
   hombres: number;
   mujeres: number;
   edadPromedio: number;
+  menores18: number;
+  adultos: number;
+  adultosMayores: number;
 };
 
 export default function DashboardPage({ email }: DashboardPageProps) {
@@ -34,8 +37,11 @@ export default function DashboardPage({ email }: DashboardPageProps) {
       const edadPromedio = total > 0
         ? Math.round(rows.reduce((sum, r) => sum + (r.edad ?? 0), 0) / total)
         : 0;
+      const menores18 = rows.filter((r) => (r.edad ?? 0) < 18).length;
+      const adultos = rows.filter((r) => (r.edad ?? 0) >= 18 && (r.edad ?? 0) < 65).length;
+      const adultosMayores = rows.filter((r) => (r.edad ?? 0) >= 65).length;
 
-      setStats({ total, hombres, mujeres, edadPromedio });
+      setStats({ total, hombres, mujeres, edadPromedio, menores18, adultos, adultosMayores });
       setLoading(false);
     };
 
@@ -56,24 +62,42 @@ export default function DashboardPage({ email }: DashboardPageProps) {
           {loading ? (
             <Spinner text="Cargando estadisticas..." />
           ) : stats ? (
-            <div className="stats-grid">
-              <div className="stat-card">
-                <span className="stat-value">{stats.total}</span>
-                <span className="stat-label">Total personas</span>
+            <>
+              <div className="stats-grid">
+                <div className="stat-card">
+                  <span className="stat-value">{stats.total}</span>
+                  <span className="stat-label">Total personas</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-value">{stats.hombres}</span>
+                  <span className="stat-label">Hombres</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-value">{stats.mujeres}</span>
+                  <span className="stat-label">Mujeres</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-value">{stats.edadPromedio}</span>
+                  <span className="stat-label">Edad promedio</span>
+                </div>
               </div>
-              <div className="stat-card">
-                <span className="stat-value">{stats.hombres}</span>
-                <span className="stat-label">Hombres</span>
+
+              <h3 className="stats-subtitle">Por grupo de edad</h3>
+              <div className="stats-grid">
+                <div className="stat-card stat-card--blue">
+                  <span className="stat-value">{stats.menores18}</span>
+                  <span className="stat-label">Menores de 18</span>
+                </div>
+                <div className="stat-card stat-card--green">
+                  <span className="stat-value">{stats.adultos}</span>
+                  <span className="stat-label">Adultos (18-64)</span>
+                </div>
+                <div className="stat-card stat-card--orange">
+                  <span className="stat-value">{stats.adultosMayores}</span>
+                  <span className="stat-label">Adultos mayores (65+)</span>
+                </div>
               </div>
-              <div className="stat-card">
-                <span className="stat-value">{stats.mujeres}</span>
-                <span className="stat-label">Mujeres</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{stats.edadPromedio}</span>
-                <span className="stat-label">Edad promedio</span>
-              </div>
-            </div>
+            </>
           ) : (
             <p>No se pudieron cargar las estadisticas.</p>
           )}

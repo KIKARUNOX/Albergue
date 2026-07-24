@@ -26,6 +26,8 @@ export default function ExportarSection() {
         direccion: p.direccion,
         estado_salud: p.estado_salud,
         escolaridad: p.escolaridad,
+        familiar: p.familiar,
+        relacion: p.relacion,
       }));
 
       downloadExcel(rows, "Personas", `personas_${timestampForFile()}.xlsx`);
